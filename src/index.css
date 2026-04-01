@@ -124,7 +124,7 @@
   }
 
   .stat-card-destructive {
-    @apply stat-card hover:shadow-destructive/8 hover:border-destructive/20;
+    @apply stat-card hover:border-destructive/20;
   }
 
   /* Polished input fields */
