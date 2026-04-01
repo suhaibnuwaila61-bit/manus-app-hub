@@ -10,7 +10,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
-const COLORS = ["hsl(230, 80%, 56%)", "hsl(152, 69%, 41%)", "hsl(38, 92%, 50%)", "hsl(270, 67%, 58%)", "hsl(0, 72%, 51%)", "hsl(190, 90%, 50%)"];
+const COLORS = ["hsl(250, 85%, 65%)", "hsl(160, 60%, 48%)", "hsl(38, 92%, 55%)", "hsl(270, 75%, 65%)", "hsl(0, 72%, 60%)", "hsl(190, 90%, 50%)"];
 
 export default function Dashboard() {
   const { t } = useLanguage();
@@ -67,45 +67,43 @@ export default function Dashboard() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 animate-fade-in">
+      <div className="space-y-6 animate-fade-in relative">
         <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
           <div>
-            <h1 className="text-2xl font-bold">{t("financialDashboard")}</h1>
+            <h1 className="text-2xl font-display font-bold">{t("financialDashboard")}</h1>
             <p className="text-sm text-muted-foreground mt-1">{t("overview")}</p>
           </div>
-          <Button onClick={() => setShowForm(!showForm)} size="sm" className="shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all duration-300">
+          <Button onClick={() => setShowForm(!showForm)} size="sm" className="glow-button shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/40 transition-all duration-500">
             <Plus className="h-4 w-4 me-1" /> {t("addEntry")}
           </Button>
         </div>
 
         {showForm && (
-          <Card className="animate-slide-up border-primary/20">
-            <CardHeader className="pb-3 flex-row items-center justify-between">
-              <CardTitle className="text-base">{t("addEntry")}</CardTitle>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowForm(false)}><X className="h-4 w-4" /></Button>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <select value={form.type} onChange={e => setForm({...form, type: e.target.value})} className="input-field">
-                  <option value="expense">{t("expense")}</option>
-                  <option value="income">{t("income")}</option>
-                </select>
-                <input type="number" step="0.01" placeholder={t("amount")} value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} className="input-field" />
-                <input type="text" placeholder={t("description")} value={form.description} onChange={e => setForm({...form, description: e.target.value})} className="input-field" />
-                <select value={form.category} onChange={e => setForm({...form, category: e.target.value})} className="input-field">
-                  {["General", "Food", "Transport", "Entertainment", "Shopping", "Bills", "Health", "Savings", "Salary"].map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-                <div className="sm:col-span-2 flex gap-2">
-                  <Button type="submit" size="sm" className="flex-1 shadow-sm shadow-primary/10">{t("submit")}</Button>
-                  <Button type="button" variant="outline" size="sm" className="flex-1" onClick={() => setShowForm(false)}>{t("cancel")}</Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
+          <div className="glass-card animate-slide-up" style={{ borderColor: "hsl(var(--primary) / 0.3)" }}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-display font-semibold">{t("addEntry")}</h3>
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-primary/10" onClick={() => setShowForm(false)}><X className="h-4 w-4" /></Button>
+            </div>
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <select value={form.type} onChange={e => setForm({...form, type: e.target.value})} className="input-field">
+                <option value="expense">{t("expense")}</option>
+                <option value="income">{t("income")}</option>
+              </select>
+              <input type="number" step="0.01" placeholder={t("amount")} value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} className="input-field" />
+              <input type="text" placeholder={t("description")} value={form.description} onChange={e => setForm({...form, description: e.target.value})} className="input-field" />
+              <select value={form.category} onChange={e => setForm({...form, category: e.target.value})} className="input-field">
+                {["General", "Food", "Transport", "Entertainment", "Shopping", "Bills", "Health", "Savings", "Salary"].map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+              <div className="sm:col-span-2 flex gap-2">
+                <Button type="submit" size="sm" className="flex-1 glow-button shadow-md shadow-primary/20">{t("submit")}</Button>
+                <Button type="button" variant="outline" size="sm" className="flex-1" onClick={() => setShowForm(false)}>{t("cancel")}</Button>
+              </div>
+            </form>
+          </div>
         )}
 
         <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList>
+          <TabsList className="bg-card/50 backdrop-blur-sm border border-border/50">
             <TabsTrigger value="overview">{t("overview")}</TabsTrigger>
             <TabsTrigger value="analytics">{t("analytics")}</TabsTrigger>
           </TabsList>
@@ -114,87 +112,79 @@ export default function Dashboard() {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {stats.map((s, i) => (
                 <div key={i} className={`stat-card${s.color === "success" ? "-success" : s.color === "destructive" ? "-destructive" : ""}`}>
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between mb-3">
                     <span className="text-xs font-medium text-muted-foreground">{s.label}</span>
-                    <div className={`h-7 w-7 rounded-lg flex items-center justify-center ${
+                    <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${
                       s.color === "success" ? "bg-success/10" : s.color === "destructive" ? "bg-destructive/10" : "bg-primary/10"
                     }`}>
-                      <s.icon className={`h-3.5 w-3.5 ${
+                      <s.icon className={`h-4 w-4 ${
                         s.color === "success" ? "text-success" : s.color === "destructive" ? "text-destructive" : "text-primary"
                       }`} />
                     </div>
                   </div>
-                  <p className="text-xl font-bold">{s.value}</p>
+                  <p className="text-xl font-display font-bold">{s.value}</p>
                 </div>
               ))}
             </div>
 
-            <Card className="transition-all duration-300 hover:shadow-md">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">{t("transactions")}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {transactions.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-6">{t("noTransactions")}</p>
-                ) : (
-                  <div className="space-y-1">
-                    {transactions.slice(-5).reverse().map(tx => (
-                      <div key={tx.id} className="list-item rounded-lg -mx-2 px-2">
-                        <div className="flex items-center gap-3">
-                          <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${tx.type === "income" ? "bg-success/10" : "bg-destructive/10"}`}>
-                            {tx.type === "income" ? <TrendingUp className="h-4 w-4 text-success" /> : <TrendingDown className="h-4 w-4 text-destructive" />}
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium">{tx.description || tx.category}</p>
-                            <p className="text-xs text-muted-foreground">{new Date(tx.transactionDate).toLocaleDateString()}</p>
-                          </div>
+            <div className="glass-card">
+              <h3 className="font-display font-semibold mb-4">{t("transactions")}</h3>
+              {transactions.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">{t("noTransactions")}</p>
+              ) : (
+                <div className="space-y-1">
+                  {transactions.slice(-5).reverse().map(tx => (
+                    <div key={tx.id} className="list-item rounded-lg -mx-2 px-2">
+                      <div className="flex items-center gap-3">
+                        <div className={`h-9 w-9 rounded-lg flex items-center justify-center ${tx.type === "income" ? "bg-success/10" : "bg-destructive/10"}`}>
+                          {tx.type === "income" ? <TrendingUp className="h-4 w-4 text-success" /> : <TrendingDown className="h-4 w-4 text-destructive" />}
                         </div>
-                        <span className={`text-sm font-semibold ${tx.type === "income" ? "text-success" : "text-destructive"}`}>
-                          {tx.type === "income" ? "+" : "-"}{fmt(parseFloat(tx.amount))}
-                        </span>
+                        <div>
+                          <p className="text-sm font-medium">{tx.description || tx.category}</p>
+                          <p className="text-xs text-muted-foreground">{new Date(tx.transactionDate).toLocaleDateString()}</p>
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                      <span className={`text-sm font-display font-semibold ${tx.type === "income" ? "text-success" : "text-destructive"}`}>
+                        {tx.type === "income" ? "+" : "-"}{fmt(parseFloat(tx.amount))}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-4">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <Card className="transition-all duration-300 hover:shadow-md">
-                <CardHeader className="pb-2"><CardTitle className="text-base">{t("incomeVsExpenses")}</CardTitle></CardHeader>
-                <CardContent>
-                  {incomeVsExpenses.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={250}>
-                      <BarChart data={incomeVsExpenses}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                        <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={11} />
-                        <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} />
-                        <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }} />
-                        <Bar dataKey="income" fill="hsl(152, 69%, 41%)" radius={[4, 4, 0, 0]} />
-                        <Bar dataKey="expenses" fill="hsl(0, 72%, 51%)" radius={[4, 4, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  ) : <p className="text-center text-sm text-muted-foreground py-12">{t("noData")}</p>}
-                </CardContent>
-              </Card>
+              <div className="glass-card">
+                <h3 className="font-display font-semibold mb-4">{t("incomeVsExpenses")}</h3>
+                {incomeVsExpenses.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={250}>
+                    <BarChart data={incomeVsExpenses}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={11} />
+                      <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} />
+                      <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }} />
+                      <Bar dataKey="income" fill="hsl(160, 60%, 48%)" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="expenses" fill="hsl(0, 72%, 60%)" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : <p className="text-center text-sm text-muted-foreground py-12">{t("noData")}</p>}
+              </div>
 
-              <Card className="transition-all duration-300 hover:shadow-md">
-                <CardHeader className="pb-2"><CardTitle className="text-base">{t("expensesByCategory")}</CardTitle></CardHeader>
-                <CardContent>
-                  {expensesByCategory.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={250}>
-                      <PieChart>
-                        <Pie data={expensesByCategory} cx="50%" cy="50%" outerRadius={90} innerRadius={50} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={11}>
-                          {expensesByCategory.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                        </Pie>
-                        <Tooltip />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  ) : <p className="text-center text-sm text-muted-foreground py-12">{t("noData")}</p>}
-                </CardContent>
-              </Card>
+              <div className="glass-card">
+                <h3 className="font-display font-semibold mb-4">{t("expensesByCategory")}</h3>
+                {expensesByCategory.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={250}>
+                    <PieChart>
+                      <Pie data={expensesByCategory} cx="50%" cy="50%" outerRadius={90} innerRadius={50} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={11}>
+                        {expensesByCategory.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : <p className="text-center text-sm text-muted-foreground py-12">{t("noData")}</p>}
+              </div>
             </div>
           </TabsContent>
         </Tabs>
