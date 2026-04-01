@@ -5,6 +5,7 @@ import { useCurrency } from "@/contexts/CurrencyContext";
 import { savingsGoalsStore, budgetsStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, X, Trash2, Target } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useState } from "react";
