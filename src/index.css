@@ -120,7 +120,7 @@
   }
 
   .stat-card-success {
-    @apply stat-card hover:shadow-success/8 hover:border-success/20;
+    @apply stat-card hover:border-success/20;
   }
 
   .stat-card-destructive {
