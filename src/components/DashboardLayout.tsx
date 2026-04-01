@@ -89,7 +89,7 @@ function SidebarNav() {
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={true}>
       <div className="min-h-screen flex w-full">
         <SidebarNav />
         <SidebarInset>
