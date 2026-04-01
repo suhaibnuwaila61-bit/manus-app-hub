@@ -2,7 +2,6 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { savingsGoalsStore, budgetsStore } from "@/lib/store";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, X, Trash2, Target } from "lucide-react";
@@ -48,46 +47,49 @@ export default function Planning() {
     <DashboardLayout>
       <div className="space-y-6 animate-fade-in">
         <div>
-          <h1 className="text-2xl font-bold">{t("planning")}</h1>
+          <h1 className="text-2xl font-display font-bold">{t("planning")}</h1>
           <p className="text-sm text-muted-foreground mt-1">{t("savingsGoalsSubtitle")}</p>
         </div>
 
         <Tabs defaultValue="goals" className="space-y-4">
-          <TabsList>
+          <TabsList className="bg-card/50 backdrop-blur-sm border border-border/50">
             <TabsTrigger value="goals">{t("savingsGoals")}</TabsTrigger>
             <TabsTrigger value="budgets">{t("budgets")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="goals" className="space-y-4">
             <div className="flex justify-end">
-              <Button size="sm" onClick={() => setShowGoalForm(true)} className="shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all duration-300">
+              <Button size="sm" onClick={() => setShowGoalForm(true)} className="glow-button shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/40 transition-all duration-500">
                 <Plus className="h-4 w-4 me-1" /> {t("addSavingsGoal")}
               </Button>
             </div>
 
             {showGoalForm && (
-              <Card className="animate-slide-up border-primary/20">
-                <CardHeader className="pb-3 flex-row items-center justify-between">
-                  <CardTitle className="text-base">{t("addSavingsGoal")}</CardTitle>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowGoalForm(false)}><X className="h-4 w-4" /></Button>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleAddGoal} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <input type="text" placeholder={t("goalName")} value={goalForm.name} onChange={e => setGoalForm({...goalForm, name: e.target.value})} className="input-field" />
-                    <input type="number" step="0.01" placeholder={t("targetAmount")} value={goalForm.targetAmount} onChange={e => setGoalForm({...goalForm, targetAmount: e.target.value})} className="input-field" />
-                    <input type="number" step="0.01" placeholder={t("currentAmount")} value={goalForm.currentAmount} onChange={e => setGoalForm({...goalForm, currentAmount: e.target.value})} className="input-field" />
-                    <input type="date" value={goalForm.deadline} onChange={e => setGoalForm({...goalForm, deadline: e.target.value})} className="input-field" />
-                    <div className="sm:col-span-2 flex gap-2">
-                      <Button type="submit" size="sm" className="flex-1 shadow-sm shadow-primary/10">{t("submit")}</Button>
-                      <Button type="button" variant="outline" size="sm" className="flex-1" onClick={() => setShowGoalForm(false)}>{t("cancel")}</Button>
-                    </div>
-                  </form>
-                </CardContent>
-              </Card>
+              <div className="glass-card animate-slide-up" style={{ borderColor: "hsl(var(--primary) / 0.3)" }}>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-display font-semibold">{t("addSavingsGoal")}</h3>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-primary/10" onClick={() => setShowGoalForm(false)}><X className="h-4 w-4" /></Button>
+                </div>
+                <form onSubmit={handleAddGoal} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <input type="text" placeholder={t("goalName")} value={goalForm.name} onChange={e => setGoalForm({...goalForm, name: e.target.value})} className="input-field" />
+                  <input type="number" step="0.01" placeholder={t("targetAmount")} value={goalForm.targetAmount} onChange={e => setGoalForm({...goalForm, targetAmount: e.target.value})} className="input-field" />
+                  <input type="number" step="0.01" placeholder={t("currentAmount")} value={goalForm.currentAmount} onChange={e => setGoalForm({...goalForm, currentAmount: e.target.value})} className="input-field" />
+                  <input type="date" value={goalForm.deadline} onChange={e => setGoalForm({...goalForm, deadline: e.target.value})} className="input-field" />
+                  <div className="sm:col-span-2 flex gap-2">
+                    <Button type="submit" size="sm" className="flex-1 glow-button shadow-md shadow-primary/20">{t("submit")}</Button>
+                    <Button type="button" variant="outline" size="sm" className="flex-1" onClick={() => setShowGoalForm(false)}>{t("cancel")}</Button>
+                  </div>
+                </form>
+              </div>
             )}
 
             {goals.length === 0 ? (
-              <Card><CardContent className="py-12 text-center"><Target className="h-10 w-10 mx-auto mb-3 text-muted-foreground/40 animate-pulse-soft" /><p className="text-sm text-muted-foreground">{t("noSavingsGoals")}</p></CardContent></Card>
+              <div className="glass-card py-12 text-center">
+                <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                  <Target className="h-7 w-7 text-primary animate-pulse-soft" />
+                </div>
+                <p className="text-sm text-muted-foreground">{t("noSavingsGoals")}</p>
+              </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {goals.map(goal => {
@@ -95,27 +97,25 @@ export default function Planning() {
                   const daysLeft = Math.ceil((new Date(goal.deadline).getTime() - Date.now()) / 86400000);
                   const done = pct >= 100;
                   return (
-                    <Card key={goal.id} className={`transition-all duration-300 hover:shadow-md ${done ? "border-success/30 hover:shadow-success/10" : "hover:shadow-primary/10"}`}>
-                      <CardContent className="p-4 space-y-3">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <p className="font-semibold">{goal.name}</p>
-                            <p className="text-xs text-muted-foreground">{daysLeft > 0 ? `${daysLeft} ${t("daysRemaining")}` : t("deadline")}</p>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            {done && <span className="text-xs font-medium text-success px-2 py-0.5 rounded-full bg-success/10">✓</span>}
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive transition-colors" onClick={() => { savingsGoalsStore.delete(goal.id); refresh(); toast.success(t("savingsGoalDeletedSuccessfully")); }}>
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
+                    <div key={goal.id} className={`glass-card space-y-3 ${done ? "hover:!border-success/40" : ""}`}>
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="font-display font-semibold">{goal.name}</p>
+                          <p className="text-xs text-muted-foreground">{daysLeft > 0 ? `${daysLeft} ${t("daysRemaining")}` : t("deadline")}</p>
                         </div>
-                        <Progress value={pct} className="h-2" />
-                        <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>{fmt(parseFloat(goal.currentAmount))}</span>
-                          <span>{fmt(parseFloat(goal.targetAmount))}</span>
+                        <div className="flex items-center gap-1">
+                          {done && <span className="text-xs font-medium text-success px-2 py-0.5 rounded-full bg-success/10">✓</span>}
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive transition-colors" onClick={() => { savingsGoalsStore.delete(goal.id); refresh(); toast.success(t("savingsGoalDeletedSuccessfully")); }}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
                         </div>
-                      </CardContent>
-                    </Card>
+                      </div>
+                      <Progress value={pct} className="h-2" />
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>{fmt(parseFloat(goal.currentAmount))}</span>
+                        <span>{fmt(parseFloat(goal.targetAmount))}</span>
+                      </div>
+                    </div>
                   );
                 })}
               </div>
@@ -124,39 +124,39 @@ export default function Planning() {
 
           <TabsContent value="budgets" className="space-y-4">
             <div className="flex justify-end">
-              <Button size="sm" onClick={() => setShowBudgetForm(true)} className="shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all duration-300">
+              <Button size="sm" onClick={() => setShowBudgetForm(true)} className="glow-button shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/40 transition-all duration-500">
                 <Plus className="h-4 w-4 me-1" /> {t("addBudget")}
               </Button>
             </div>
 
             {showBudgetForm && (
-              <Card className="animate-slide-up border-primary/20">
-                <CardHeader className="pb-3 flex-row items-center justify-between">
-                  <CardTitle className="text-base">{t("addBudget")}</CardTitle>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowBudgetForm(false)}><X className="h-4 w-4" /></Button>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleAddBudget} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <input type="text" placeholder={t("budgetName")} value={budgetForm.name} onChange={e => setBudgetForm({...budgetForm, name: e.target.value})} className="input-field" />
-                    <input type="number" step="0.01" placeholder={t("limitAmount")} value={budgetForm.limitAmount} onChange={e => setBudgetForm({...budgetForm, limitAmount: e.target.value})} className="input-field" />
-                    <select value={budgetForm.period} onChange={e => setBudgetForm({...budgetForm, period: e.target.value})} className="input-field">
-                      <option value="daily">{t("daily")}</option>
-                      <option value="weekly">{t("weekly")}</option>
-                      <option value="monthly">{t("monthly")}</option>
-                      <option value="yearly">{t("yearly")}</option>
-                    </select>
-                    <input type="number" placeholder="Alert %" value={budgetForm.alertThreshold} onChange={e => setBudgetForm({...budgetForm, alertThreshold: e.target.value})} className="input-field" />
-                    <div className="sm:col-span-2 flex gap-2">
-                      <Button type="submit" size="sm" className="flex-1 shadow-sm shadow-primary/10">{t("submit")}</Button>
-                      <Button type="button" variant="outline" size="sm" className="flex-1" onClick={() => setShowBudgetForm(false)}>{t("cancel")}</Button>
-                    </div>
-                  </form>
-                </CardContent>
-              </Card>
+              <div className="glass-card animate-slide-up" style={{ borderColor: "hsl(var(--primary) / 0.3)" }}>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-display font-semibold">{t("addBudget")}</h3>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-primary/10" onClick={() => setShowBudgetForm(false)}><X className="h-4 w-4" /></Button>
+                </div>
+                <form onSubmit={handleAddBudget} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <input type="text" placeholder={t("budgetName")} value={budgetForm.name} onChange={e => setBudgetForm({...budgetForm, name: e.target.value})} className="input-field" />
+                  <input type="number" step="0.01" placeholder={t("limitAmount")} value={budgetForm.limitAmount} onChange={e => setBudgetForm({...budgetForm, limitAmount: e.target.value})} className="input-field" />
+                  <select value={budgetForm.period} onChange={e => setBudgetForm({...budgetForm, period: e.target.value})} className="input-field">
+                    <option value="daily">{t("daily")}</option>
+                    <option value="weekly">{t("weekly")}</option>
+                    <option value="monthly">{t("monthly")}</option>
+                    <option value="yearly">{t("yearly")}</option>
+                  </select>
+                  <input type="number" placeholder="Alert %" value={budgetForm.alertThreshold} onChange={e => setBudgetForm({...budgetForm, alertThreshold: e.target.value})} className="input-field" />
+                  <div className="sm:col-span-2 flex gap-2">
+                    <Button type="submit" size="sm" className="flex-1 glow-button shadow-md shadow-primary/20">{t("submit")}</Button>
+                    <Button type="button" variant="outline" size="sm" className="flex-1" onClick={() => setShowBudgetForm(false)}>{t("cancel")}</Button>
+                  </div>
+                </form>
+              </div>
             )}
 
             {budgets.length === 0 ? (
-              <Card><CardContent className="py-12 text-center"><p className="text-sm text-muted-foreground">{t("noBudgets")}</p></CardContent></Card>
+              <div className="glass-card py-12 text-center">
+                <p className="text-sm text-muted-foreground">{t("noBudgets")}</p>
+              </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {budgets.map(budget => {
@@ -166,24 +166,22 @@ export default function Planning() {
                   const isOver = pct >= 100;
                   const isAlert = pct >= budget.alertThreshold;
                   return (
-                    <Card key={budget.id} className={`transition-all duration-300 hover:shadow-md ${isOver ? "border-destructive/50 hover:shadow-destructive/10" : isAlert ? "border-warning/50 hover:shadow-warning/10" : "hover:shadow-primary/10"}`}>
-                      <CardContent className="p-4 space-y-3">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <p className="font-semibold">{budget.name}</p>
-                            <p className="text-xs text-muted-foreground capitalize">{budget.period}</p>
-                          </div>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive transition-colors" onClick={() => { budgetsStore.delete(budget.id); refresh(); toast.success(t("budgetDeletedSuccessfully")); }}>
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
+                    <div key={budget.id} className={`glass-card space-y-3 ${isOver ? "hover:!border-destructive/40" : isAlert ? "hover:!border-warning/40" : ""}`}>
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="font-display font-semibold">{budget.name}</p>
+                          <p className="text-xs text-muted-foreground capitalize">{budget.period}</p>
                         </div>
-                        <Progress value={Math.min(pct, 100)} className={`h-2 ${isOver ? "[&>div]:bg-destructive" : isAlert ? "[&>div]:bg-warning" : "[&>div]:bg-success"}`} />
-                        <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>{fmt(spent)} {t("spent")}</span>
-                          <span>{fmt(limit)}</span>
-                        </div>
-                      </CardContent>
-                    </Card>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive transition-colors" onClick={() => { budgetsStore.delete(budget.id); refresh(); toast.success(t("budgetDeletedSuccessfully")); }}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                      <Progress value={Math.min(pct, 100)} className={`h-2 ${isOver ? "[&>div]:bg-destructive" : isAlert ? "[&>div]:bg-warning" : "[&>div]:bg-success"}`} />
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>{fmt(spent)} {t("spent")}</span>
+                        <span>{fmt(limit)}</span>
+                      </div>
+                    </div>
                   );
                 })}
               </div>
