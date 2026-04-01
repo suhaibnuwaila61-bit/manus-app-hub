@@ -1,5 +1,5 @@
 import DashboardLayout from "@/components/DashboardLayout";
-import PageTransition from "@/components/PageTransition";
+
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { transactionsStore, investmentsStore, savingsGoalsStore, lendingsStore } from "@/lib/store";
