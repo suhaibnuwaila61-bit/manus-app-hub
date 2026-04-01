@@ -1,3 +1,4 @@
+import PageTransition from "@/components/PageTransition";
 import {
   Sidebar,
   SidebarContent,
