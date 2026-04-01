@@ -124,7 +124,7 @@
 
   .glass-card:hover {
     border-color: hsl(var(--primary) / 0.3);
-    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.1), 0 8px 40px -8px hsl(var(--primary) / 0.15), 0 0 60px -20px hsl(var(--glow-accent) / 0.1);
+    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.1), 0 8px 40px -8px hsl(var(--primary) / 0.2), 0 0 80px -20px hsl(var(--glow-accent) / 0.15);
     transform: translateY(-2px);
   }
 
@@ -138,7 +138,7 @@
   }
   .stat-card-success:hover {
     border-color: hsl(var(--success) / 0.4);
-    box-shadow: 0 0 0 1px hsl(var(--success) / 0.1), 0 8px 40px -8px hsl(var(--success) / 0.15);
+    box-shadow: 0 0 0 1px hsl(var(--success) / 0.15), 0 8px 40px -8px hsl(var(--success) / 0.2), 0 0 60px -10px hsl(var(--success) / 0.15);
   }
 
   .stat-card-destructive {
@@ -146,20 +146,42 @@
   }
   .stat-card-destructive:hover {
     border-color: hsl(var(--destructive) / 0.4);
-    box-shadow: 0 0 0 1px hsl(var(--destructive) / 0.1), 0 8px 40px -8px hsl(var(--destructive) / 0.15);
+    box-shadow: 0 0 0 1px hsl(var(--destructive) / 0.15), 0 8px 40px -8px hsl(var(--destructive) / 0.2), 0 0 60px -10px hsl(var(--destructive) / 0.15);
   }
 
-  /* Cosmic input fields */
+  /* Styled select / input fields */
   .input-field {
-    @apply h-10 rounded-lg border bg-background/50 px-3 text-sm;
+    @apply h-10 rounded-lg border bg-background/50 px-3 text-sm appearance-none;
     @apply transition-all duration-300;
     @apply placeholder:text-muted-foreground/50;
     border-color: hsl(var(--border) / 0.5);
+    background-image: none;
   }
   .input-field:focus {
     outline: none;
     border-color: hsl(var(--primary) / 0.5);
-    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.1), 0 0 20px -5px hsl(var(--primary) / 0.2);
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.15), 0 0 25px -5px hsl(var(--primary) / 0.25);
+    background-color: hsl(var(--card));
+  }
+
+  /* Custom styled select */
+  select.input-field {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%237c7c8a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 16px;
+    padding-right: 2.5rem;
+    cursor: pointer;
+  }
+  html[dir="rtl"] select.input-field {
+    background-position: left 0.75rem center;
+    padding-right: 0.75rem;
+    padding-left: 2.5rem;
+  }
+  select.input-field option {
+    background-color: hsl(var(--card));
+    color: hsl(var(--card-foreground));
+    padding: 8px 12px;
   }
 
   /* List items */
@@ -167,7 +189,7 @@
     @apply flex items-center justify-between p-4 transition-all duration-300;
   }
   .list-item:hover {
-    background: hsl(var(--primary) / 0.04);
+    background: hsl(var(--primary) / 0.06);
   }
 
   /* Gradient glow button */
@@ -178,16 +200,19 @@
   .glow-button::before {
     content: '';
     position: absolute;
-    inset: -2px;
+    inset: -3px;
     border-radius: inherit;
     background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--glow-accent)), hsl(var(--primary)));
     z-index: -1;
     opacity: 0;
     transition: opacity 0.4s ease;
-    filter: blur(8px);
+    filter: blur(12px);
   }
   .glow-button:hover::before {
-    opacity: 0.6;
+    opacity: 0.7;
+  }
+  .glow-button:active {
+    transform: scale(0.97);
   }
 
   /* Gradient text */
@@ -198,7 +223,7 @@
     background-clip: text;
   }
 
-  /* Ambient orb backgrounds */
+  /* Ambient orb backgrounds — MUCH brighter */
   .orb-glow {
     position: relative;
     overflow: hidden;
@@ -206,26 +231,32 @@
   .orb-glow::before {
     content: '';
     position: absolute;
-    width: 400px;
-    height: 400px;
+    width: 500px;
+    height: 500px;
     border-radius: 50%;
-    background: radial-gradient(circle, hsl(var(--primary) / 0.15), transparent 70%);
-    top: -200px;
-    right: -100px;
+    background: radial-gradient(circle, hsl(var(--primary) / 0.35), hsl(var(--primary) / 0.1) 40%, transparent 70%);
+    top: -250px;
+    right: -120px;
     pointer-events: none;
     animation: orbFloat 8s ease-in-out infinite;
+    z-index: 0;
   }
   .orb-glow::after {
     content: '';
     position: absolute;
-    width: 300px;
-    height: 300px;
+    width: 400px;
+    height: 400px;
     border-radius: 50%;
-    background: radial-gradient(circle, hsl(var(--glow-accent) / 0.1), transparent 70%);
-    bottom: -150px;
-    left: -100px;
+    background: radial-gradient(circle, hsl(var(--glow-accent) / 0.3), hsl(var(--glow-accent) / 0.08) 40%, transparent 70%);
+    bottom: -180px;
+    left: -120px;
     pointer-events: none;
     animation: orbFloat 10s ease-in-out infinite reverse;
+    z-index: 0;
+  }
+  .orb-glow > * {
+    position: relative;
+    z-index: 1;
   }
 }
 
@@ -266,7 +297,7 @@
 
   @keyframes orbFloat {
     0%, 100% { transform: translate(0, 0) scale(1); }
-    33% { transform: translate(30px, -20px) scale(1.1); }
+    33% { transform: translate(30px, -20px) scale(1.15); }
     66% { transform: translate(-20px, 20px) scale(0.9); }
   }
 

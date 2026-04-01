@@ -1,4 +1,5 @@
 import DashboardLayout from "@/components/DashboardLayout";
+
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { transactionsStore, investmentsStore, savingsGoalsStore, lendingsStore } from "@/lib/store";

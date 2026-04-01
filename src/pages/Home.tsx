@@ -1,11 +1,13 @@
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, BarChart3, Shield, Sparkles, Wallet, Zap, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import PageTransition from "@/components/PageTransition";
 
 export default function Home() {
   const navigate = useNavigate();
 
   return (
+    <PageTransition>
     <div className="min-h-screen bg-background orb-glow">
       {/* Nav */}
       <nav className="border-b border-border/50 backdrop-blur-xl bg-background/60 sticky top-0 z-50">
@@ -73,5 +75,6 @@ export default function Home() {
         </div>
       </footer>
     </div>
+    </PageTransition>
   );
 }
