@@ -10,14 +10,10 @@ import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import Transactions from "./pages/Transactions";
 import Investments from "./pages/Investments";
-import SavingsGoals from "./pages/SavingsGoals";
-import Budgets from "./pages/Budgets";
+import Planning from "./pages/Planning";
 import Lendings from "./pages/Lendings";
-import AIChat from "./pages/AIChat";
-import Advisor from "./pages/Advisor";
-import Analytics from "./pages/Analytics";
+import AIAssistant from "./pages/AIAssistant";
 import Settings from "./pages/Settings";
-import Demo from "./pages/Demo";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,16 +33,12 @@ function AppContent() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/demo" element={<Demo />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/transactions" element={<Transactions />} />
           <Route path="/investments" element={<Investments />} />
-          <Route path="/savings-goals" element={<SavingsGoals />} />
-          <Route path="/budgets" element={<Budgets />} />
+          <Route path="/planning" element={<Planning />} />
           <Route path="/lendings" element={<Lendings />} />
-          <Route path="/ai-chat" element={<AIChat />} />
-          <Route path="/advisor" element={<Advisor />} />
-          <Route path="/analytics" element={<Analytics />} />
+          <Route path="/ai-assistant" element={<AIAssistant />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
