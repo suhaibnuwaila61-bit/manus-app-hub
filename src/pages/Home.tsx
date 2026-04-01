@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, BarChart3, Shield, Sparkles, Wallet, Zap, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import PageTransition from "@/components/PageTransition";
 
 export default function Home() {
   const navigate = useNavigate();
