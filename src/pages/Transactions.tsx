@@ -4,6 +4,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { transactionsStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, X, Trash2, TrendingUp, TrendingDown } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -29,6 +30,8 @@ export default function Transactions() {
     setShowForm(false);
     refresh();
   };
+
+  const categories = ["General", "Food", "Transport", "Entertainment", "Shopping", "Bills", "Health", "Savings"];
 
   return (
     <DashboardLayout>
@@ -56,15 +59,27 @@ export default function Transactions() {
               <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-primary/10" onClick={() => setShowForm(false)}><X className="h-4 w-4" /></Button>
             </div>
             <form onSubmit={handleAdd} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value as any})} className="input-field">
-                <option value="expense">{t("expense")}</option>
-                <option value="income">{t("income")}</option>
-              </select>
+              <Select value={formData.type} onValueChange={(v) => setFormData({...formData, type: v as "income" | "expense"})}>
+                <SelectTrigger className="h-10 rounded-lg border-border/50 bg-background/50 backdrop-blur-sm focus:ring-primary/30 focus:border-primary/50 transition-all duration-300">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="border-border/50 bg-card/95 backdrop-blur-xl shadow-xl shadow-primary/10">
+                  <SelectItem value="expense" className="focus:bg-primary/10 focus:text-foreground cursor-pointer">{t("expense")}</SelectItem>
+                  <SelectItem value="income" className="focus:bg-primary/10 focus:text-foreground cursor-pointer">{t("income")}</SelectItem>
+                </SelectContent>
+              </Select>
               <input type="number" step="0.01" placeholder={t("amount")} value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="input-field" />
               <input type="text" placeholder={t("description")} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="input-field" />
-              <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="input-field">
-                {["General", "Food", "Transport", "Entertainment", "Shopping", "Bills", "Health", "Savings"].map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
+              <Select value={formData.category} onValueChange={(v) => setFormData({...formData, category: v})}>
+                <SelectTrigger className="h-10 rounded-lg border-border/50 bg-background/50 backdrop-blur-sm focus:ring-primary/30 focus:border-primary/50 transition-all duration-300">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="border-border/50 bg-card/95 backdrop-blur-xl shadow-xl shadow-primary/10">
+                  {categories.map(c => (
+                    <SelectItem key={c} value={c} className="focus:bg-primary/10 focus:text-foreground cursor-pointer">{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <div className="sm:col-span-2 flex gap-2">
                 <Button type="submit" size="sm" className="flex-1 glow-button shadow-md shadow-primary/20">{t("submit")}</Button>
                 <Button type="button" variant="outline" size="sm" className="flex-1" onClick={() => setShowForm(false)}>{t("cancel")}</Button>
