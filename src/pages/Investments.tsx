@@ -61,9 +61,16 @@ export default function Investments() {
             <form onSubmit={handleAdd} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <input type="text" placeholder={t("symbol")} value={form.symbol} onChange={e => setForm({...form, symbol: e.target.value})} className="input-field" />
               <input type="text" placeholder={t("name")} value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="input-field" />
-              <select value={form.assetType} onChange={e => setForm({...form, assetType: e.target.value})} className="input-field">
-                {["stock", "crypto", "bond", "etf", "mutual", "commodity", "other"].map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
-              </select>
+              <Select value={form.assetType} onValueChange={(v) => setForm({...form, assetType: v})}>
+                <SelectTrigger className="h-10 rounded-lg border-border/50 bg-background/50 backdrop-blur-sm focus:ring-primary/30 focus:border-primary/50 transition-all duration-300">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="border-border/50 bg-card/95 backdrop-blur-xl shadow-xl shadow-primary/10">
+                  {["stock", "crypto", "bond", "etf", "mutual", "commodity", "other"].map(t => (
+                    <SelectItem key={t} value={t} className="focus:bg-primary/10 focus:text-foreground cursor-pointer">{t.charAt(0).toUpperCase() + t.slice(1)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <input type="number" step="0.01" placeholder={t("quantity")} value={form.quantity} onChange={e => setForm({...form, quantity: e.target.value})} className="input-field" />
               <input type="number" step="0.01" placeholder={t("purchasePrice")} value={form.purchasePrice} onChange={e => setForm({...form, purchasePrice: e.target.value})} className="input-field" />
               <input type="number" step="0.01" placeholder={t("currentPrice")} value={form.currentPrice} onChange={e => setForm({...form, currentPrice: e.target.value})} className="input-field" />

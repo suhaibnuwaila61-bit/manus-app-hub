@@ -67,10 +67,15 @@ export default function Lendings() {
             </div>
             <form onSubmit={handleAdd} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <input type="text" placeholder={t("personName")} value={form.personName} onChange={e => setForm({...form, personName: e.target.value})} className="input-field" />
-              <select value={form.type} onChange={e => setForm({...form, type: e.target.value as any})} className="input-field">
-                <option value="lent">{t("lent")}</option>
-                <option value="borrowed">{t("borrowed")}</option>
-              </select>
+              <Select value={form.type} onValueChange={(v) => setForm({...form, type: v as any})}>
+                <SelectTrigger className="h-10 rounded-lg border-border/50 bg-background/50 backdrop-blur-sm focus:ring-primary/30 focus:border-primary/50 transition-all duration-300">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="border-border/50 bg-card/95 backdrop-blur-xl shadow-xl shadow-primary/10">
+                  <SelectItem value="lent" className="focus:bg-primary/10 focus:text-foreground cursor-pointer">{t("lent")}</SelectItem>
+                  <SelectItem value="borrowed" className="focus:bg-primary/10 focus:text-foreground cursor-pointer">{t("borrowed")}</SelectItem>
+                </SelectContent>
+              </Select>
               <input type="number" step="0.01" placeholder={t("amount")} value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} className="input-field" />
               <input type="text" placeholder={t("description")} value={form.description} onChange={e => setForm({...form, description: e.target.value})} className="input-field" />
               <div className="sm:col-span-2 flex gap-2">
