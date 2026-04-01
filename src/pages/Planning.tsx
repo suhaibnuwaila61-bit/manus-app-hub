@@ -5,6 +5,7 @@ import { useCurrency } from "@/contexts/CurrencyContext";
 import { savingsGoalsStore, budgetsStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, X, Trash2, Target } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useState } from "react";
@@ -139,12 +140,17 @@ export default function Planning() {
                 <form onSubmit={handleAddBudget} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <input type="text" placeholder={t("budgetName")} value={budgetForm.name} onChange={e => setBudgetForm({...budgetForm, name: e.target.value})} className="input-field" />
                   <input type="number" step="0.01" placeholder={t("limitAmount")} value={budgetForm.limitAmount} onChange={e => setBudgetForm({...budgetForm, limitAmount: e.target.value})} className="input-field" />
-                  <select value={budgetForm.period} onChange={e => setBudgetForm({...budgetForm, period: e.target.value})} className="input-field">
-                    <option value="daily">{t("daily")}</option>
-                    <option value="weekly">{t("weekly")}</option>
-                    <option value="monthly">{t("monthly")}</option>
-                    <option value="yearly">{t("yearly")}</option>
-                  </select>
+                  <Select value={budgetForm.period} onValueChange={(v) => setBudgetForm({...budgetForm, period: v})}>
+                    <SelectTrigger className="h-10 rounded-lg border-border/50 bg-background/50 backdrop-blur-sm focus:ring-primary/30 focus:border-primary/50 transition-all duration-300">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="border-border/50 bg-card/95 backdrop-blur-xl shadow-xl shadow-primary/10">
+                      <SelectItem value="daily" className="focus:bg-primary/10 focus:text-foreground cursor-pointer">{t("daily")}</SelectItem>
+                      <SelectItem value="weekly" className="focus:bg-primary/10 focus:text-foreground cursor-pointer">{t("weekly")}</SelectItem>
+                      <SelectItem value="monthly" className="focus:bg-primary/10 focus:text-foreground cursor-pointer">{t("monthly")}</SelectItem>
+                      <SelectItem value="yearly" className="focus:bg-primary/10 focus:text-foreground cursor-pointer">{t("yearly")}</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <input type="number" placeholder="Alert %" value={budgetForm.alertThreshold} onChange={e => setBudgetForm({...budgetForm, alertThreshold: e.target.value})} className="input-field" />
                   <div className="sm:col-span-2 flex gap-2">
                     <Button type="submit" size="sm" className="flex-1 glow-button shadow-md shadow-primary/20">{t("submit")}</Button>
