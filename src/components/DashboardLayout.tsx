@@ -100,6 +100,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <PageTransition>
               {children}
             </PageTransition>
+          </main>
         </SidebarInset>
       </div>
     </SidebarProvider>
