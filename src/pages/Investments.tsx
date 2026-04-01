@@ -1,130 +1,114 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { investmentsStore } from "@/lib/store";
-import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Plus, X, Trash2 } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 export default function Investments() {
   const { t } = useLanguage();
   const [, setRefresh] = useState(0);
   const refresh = () => setRefresh(n => n + 1);
-  const [showAddForm, setShowAddForm] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ symbol: "", assetType: "stock", quantity: "", purchasePrice: "", currentPrice: "", name: "" });
 
   const investments = investmentsStore.list();
   const fmt = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
-
   const portfolioValue = investments.reduce((s, i) => s + parseFloat(i.quantity) * parseFloat(i.currentPrice), 0);
   const totalCost = investments.reduce((s, i) => s + parseFloat(i.quantity) * parseFloat(i.purchasePrice), 0);
   const totalGain = portfolioValue - totalCost;
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.symbol || !form.quantity || !form.purchasePrice || !form.currentPrice) {
-      toast.error(t("pleaseFillAllFields")); return;
-    }
-    investmentsStore.create({
-      symbol: form.symbol.toUpperCase(),
-      assetType: form.assetType,
-      quantity: form.quantity,
-      purchasePrice: form.purchasePrice,
-      currentPrice: form.currentPrice,
-      name: form.name || form.symbol.toUpperCase(),
-    });
+    if (!form.symbol || !form.quantity || !form.purchasePrice || !form.currentPrice) { toast.error(t("pleaseFillAllFields")); return; }
+    investmentsStore.create({ symbol: form.symbol.toUpperCase(), assetType: form.assetType, quantity: form.quantity, purchasePrice: form.purchasePrice, currentPrice: form.currentPrice, name: form.name || form.symbol.toUpperCase() });
     toast.success(t("investmentAdded"));
     setForm({ symbol: "", assetType: "stock", quantity: "", purchasePrice: "", currentPrice: "", name: "" });
-    setShowAddForm(false);
+    setShowForm(false);
     refresh();
   };
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex justify-between items-start">
+        <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
           <div>
-            <h1 className="text-3xl font-bold neon-text">{t("investmentPortfolioTitle")}</h1>
-            <p className="text-muted-foreground text-sm mt-1">{t("investmentPortfolioSubtitle")}</p>
+            <h1 className="text-2xl font-bold">{t("investmentPortfolioTitle")}</h1>
+            <p className="text-sm text-muted-foreground mt-1">{t("investmentPortfolioSubtitle")}</p>
           </div>
-          <button onClick={() => setShowAddForm(true)} className="btn-neon-cyan flex items-center gap-2 text-sm">
-            <Plus className="w-4 h-4" /> {t("addInvestment")}
-          </button>
+          <Button onClick={() => setShowForm(true)} size="sm"><Plus className="h-4 w-4 me-1" /> {t("addInvestment")}</Button>
         </div>
 
-        {/* Summary */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="card-neon p-4"><div className="hud-stat-label">Total Value</div><div className="text-xl font-bold text-primary">{fmt(portfolioValue)}</div></div>
-          <div className="card-neon p-4"><div className="hud-stat-label">Total Cost</div><div className="text-xl font-bold text-primary">{fmt(totalCost)}</div></div>
-          <div className={`card-neon p-4`}><div className="hud-stat-label">Gain/Loss</div><div className={`text-xl font-bold ${totalGain >= 0 ? 'text-secondary' : 'text-destructive'}`}>{fmt(totalGain)}</div></div>
-          <div className="card-neon p-4"><div className="hud-stat-label">Assets</div><div className="text-xl font-bold text-primary">{investments.length}</div></div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card><CardContent className="p-4"><span className="text-xs text-muted-foreground">{t("totalValue")}</span><p className="text-lg font-bold">{fmt(portfolioValue)}</p></CardContent></Card>
+          <Card><CardContent className="p-4"><span className="text-xs text-muted-foreground">{t("totalCost")}</span><p className="text-lg font-bold">{fmt(totalCost)}</p></CardContent></Card>
+          <Card><CardContent className="p-4"><span className="text-xs text-muted-foreground">{t("totalGain")}</span><p className={`text-lg font-bold ${totalGain >= 0 ? "text-success" : "text-destructive"}`}>{fmt(totalGain)}</p></CardContent></Card>
+          <Card><CardContent className="p-4"><span className="text-xs text-muted-foreground">{t("assets")}</span><p className="text-lg font-bold">{investments.length}</p></CardContent></Card>
         </div>
 
-        {/* Add Form */}
-        {showAddForm && (
-          <div className="card-neon-pink p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-destructive uppercase">{t("addInvestment")}</h3>
-              <button onClick={() => setShowAddForm(false)}><X className="w-5 h-5" /></button>
-            </div>
-            <form onSubmit={handleAdd} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input type="text" placeholder={t("symbol")} value={form.symbol} onChange={e => setForm({...form, symbol: e.target.value})}
-                className="w-full px-4 py-2 rounded-lg border border-border bg-background" />
-              <input type="text" placeholder={t("name")} value={form.name} onChange={e => setForm({...form, name: e.target.value})}
-                className="w-full px-4 py-2 rounded-lg border border-border bg-background" />
-              <select value={form.assetType} onChange={e => setForm({...form, assetType: e.target.value})}
-                className="w-full px-4 py-2 rounded-lg border border-border bg-background">
-                {["stock", "crypto", "bond", "etf", "mutual", "commodity", "other"].map(t => (
-                  <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
-                ))}
-              </select>
-              <input type="number" step="0.01" placeholder={t("quantity")} value={form.quantity} onChange={e => setForm({...form, quantity: e.target.value})}
-                className="w-full px-4 py-2 rounded-lg border border-border bg-background" />
-              <input type="number" step="0.01" placeholder={t("purchasePrice")} value={form.purchasePrice} onChange={e => setForm({...form, purchasePrice: e.target.value})}
-                className="w-full px-4 py-2 rounded-lg border border-border bg-background" />
-              <input type="number" step="0.01" placeholder={t("currentPrice")} value={form.currentPrice} onChange={e => setForm({...form, currentPrice: e.target.value})}
-                className="w-full px-4 py-2 rounded-lg border border-border bg-background" />
-              <div className="md:col-span-2 flex gap-3">
-                <button type="submit" className="flex-1 btn-neon-cyan">{t("submit")}</button>
-                <button type="button" onClick={() => setShowAddForm(false)} className="flex-1 px-4 py-2 rounded-lg border border-border">{t("cancel")}</button>
-              </div>
-            </form>
-          </div>
-        )}
-
-        {/* Investment List */}
-        {investments.length === 0 ? (
-          <div className="card-neon p-8 text-center text-muted-foreground">{t("noInvestments")}</div>
-        ) : (
-          <div className="space-y-3">
-            {investments.map(inv => {
-              const value = parseFloat(inv.quantity) * parseFloat(inv.currentPrice);
-              const cost = parseFloat(inv.quantity) * parseFloat(inv.purchasePrice);
-              const gain = value - cost;
-              const gainPct = cost > 0 ? (gain / cost) * 100 : 0;
-              return (
-                <div key={inv.id} className="card-neon p-4 flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3">
-                      <span className="font-bold text-primary text-lg">{inv.symbol}</span>
-                      <span className="text-xs px-2 py-1 rounded bg-primary/10 text-primary">{inv.assetType}</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {inv.quantity} units × {fmt(parseFloat(inv.currentPrice))} = {fmt(value)}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <div className={`font-bold ${gain >= 0 ? 'text-secondary' : 'text-destructive'}`}>{fmt(gain)}</div>
-                      <div className={`text-xs ${gain >= 0 ? 'text-secondary' : 'text-destructive'}`}>{gainPct.toFixed(2)}%</div>
-                    </div>
-                    <button onClick={() => { investmentsStore.delete(inv.id); refresh(); toast.success(t("investmentDeletedSuccessfully")); }}
-                      className="text-destructive hover:text-destructive/70"><Trash2 className="w-4 h-4" /></button>
-                  </div>
+        {showForm && (
+          <Card>
+            <CardHeader className="pb-3 flex-row items-center justify-between">
+              <CardTitle className="text-base">{t("addInvestment")}</CardTitle>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowForm(false)}><X className="h-4 w-4" /></Button>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleAdd} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <input type="text" placeholder={t("symbol")} value={form.symbol} onChange={e => setForm({...form, symbol: e.target.value})} className="h-9 rounded-md border border-input bg-background px-3 text-sm" />
+                <input type="text" placeholder={t("name")} value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="h-9 rounded-md border border-input bg-background px-3 text-sm" />
+                <select value={form.assetType} onChange={e => setForm({...form, assetType: e.target.value})} className="h-9 rounded-md border border-input bg-background px-3 text-sm">
+                  {["stock", "crypto", "bond", "etf", "mutual", "commodity", "other"].map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
+                </select>
+                <input type="number" step="0.01" placeholder={t("quantity")} value={form.quantity} onChange={e => setForm({...form, quantity: e.target.value})} className="h-9 rounded-md border border-input bg-background px-3 text-sm" />
+                <input type="number" step="0.01" placeholder={t("purchasePrice")} value={form.purchasePrice} onChange={e => setForm({...form, purchasePrice: e.target.value})} className="h-9 rounded-md border border-input bg-background px-3 text-sm" />
+                <input type="number" step="0.01" placeholder={t("currentPrice")} value={form.currentPrice} onChange={e => setForm({...form, currentPrice: e.target.value})} className="h-9 rounded-md border border-input bg-background px-3 text-sm" />
+                <div className="sm:col-span-2 flex gap-2">
+                  <Button type="submit" size="sm" className="flex-1">{t("submit")}</Button>
+                  <Button type="button" variant="outline" size="sm" className="flex-1" onClick={() => setShowForm(false)}>{t("cancel")}</Button>
                 </div>
-              );
-            })}
-          </div>
+              </form>
+            </CardContent>
+          </Card>
         )}
+
+        <Card>
+          <CardContent className="p-0">
+            {investments.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-12">{t("noInvestments")}</p>
+            ) : (
+              <div className="divide-y divide-border">
+                {investments.map(inv => {
+                  const value = parseFloat(inv.quantity) * parseFloat(inv.currentPrice);
+                  const cost = parseFloat(inv.quantity) * parseFloat(inv.purchasePrice);
+                  const gain = value - cost;
+                  const pct = cost > 0 ? (gain / cost) * 100 : 0;
+                  return (
+                    <div key={inv.id} className="flex items-center justify-between p-4">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold">{inv.symbol}</span>
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-accent text-accent-foreground">{inv.assetType}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">{inv.quantity} × {fmt(parseFloat(inv.currentPrice))}</p>
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0 ms-3">
+                        <div className="text-end">
+                          <p className="text-sm font-semibold">{fmt(value)}</p>
+                          <p className={`text-xs ${gain >= 0 ? "text-success" : "text-destructive"}`}>{gain >= 0 ? "+" : ""}{fmt(gain)} ({pct.toFixed(1)}%)</p>
+                        </div>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => { investmentsStore.delete(inv.id); refresh(); toast.success(t("investmentDeletedSuccessfully")); }}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
   );
