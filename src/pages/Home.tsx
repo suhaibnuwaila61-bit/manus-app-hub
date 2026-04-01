@@ -7,6 +7,7 @@ export default function Home() {
   const navigate = useNavigate();
 
   return (
+    <PageTransition>
     <div className="min-h-screen bg-background orb-glow">
       {/* Nav */}
       <nav className="border-b border-border/50 backdrop-blur-xl bg-background/60 sticky top-0 z-50">
