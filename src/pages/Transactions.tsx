@@ -1,14 +1,16 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import { transactionsStore } from "@/lib/store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, X, Trash2 } from "lucide-react";
+import { Plus, X, Trash2, TrendingUp, TrendingDown } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 export default function Transactions() {
   const { t } = useLanguage();
+  const { fmt } = useCurrency();
   const [, setRefresh] = useState(0);
   const refresh = () => setRefresh(n => n + 1);
   const [showForm, setShowForm] = useState(false);
@@ -17,7 +19,6 @@ export default function Transactions() {
   const transactions = transactionsStore.list();
   const expenseTotal = transactions.filter(t => t.type === "expense").reduce((s, t) => s + parseFloat(t.amount), 0);
   const incomeTotal = transactions.filter(t => t.type === "income").reduce((s, t) => s + parseFloat(t.amount), 0);
-  const fmt = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,44 +32,42 @@ export default function Transactions() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 animate-fade-in">
         <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
           <div>
             <h1 className="text-2xl font-bold">{t("transactionHistory")}</h1>
             <p className="text-sm text-muted-foreground mt-1">{t("trackAllTransactions")}</p>
           </div>
-          <Button onClick={() => setShowForm(true)} size="sm">
+          <Button onClick={() => setShowForm(true)} size="sm" className="shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all duration-300">
             <Plus className="h-4 w-4 me-1" /> {t("addTransaction")}
           </Button>
         </div>
 
-        {/* Summary */}
         <div className="grid grid-cols-3 gap-4">
-          <Card><CardContent className="p-4"><span className="text-xs text-muted-foreground">{t("income")}</span><p className="text-lg font-bold text-success">{fmt(incomeTotal)}</p></CardContent></Card>
-          <Card><CardContent className="p-4"><span className="text-xs text-muted-foreground">{t("expense")}</span><p className="text-lg font-bold text-destructive">{fmt(expenseTotal)}</p></CardContent></Card>
-          <Card><CardContent className="p-4"><span className="text-xs text-muted-foreground">{t("net")}</span><p className={`text-lg font-bold ${incomeTotal - expenseTotal >= 0 ? "text-success" : "text-destructive"}`}>{fmt(incomeTotal - expenseTotal)}</p></CardContent></Card>
+          <div className="stat-card-success"><span className="text-xs text-muted-foreground">{t("income")}</span><p className="text-lg font-bold text-success">{fmt(incomeTotal)}</p></div>
+          <div className="stat-card-destructive"><span className="text-xs text-muted-foreground">{t("expense")}</span><p className="text-lg font-bold text-destructive">{fmt(expenseTotal)}</p></div>
+          <div className="stat-card"><span className="text-xs text-muted-foreground">{t("net")}</span><p className={`text-lg font-bold ${incomeTotal - expenseTotal >= 0 ? "text-success" : "text-destructive"}`}>{fmt(incomeTotal - expenseTotal)}</p></div>
         </div>
 
-        {/* Form */}
         {showForm && (
-          <Card>
+          <Card className="animate-slide-up border-primary/20">
             <CardHeader className="pb-3 flex-row items-center justify-between">
               <CardTitle className="text-base">{t("addTransaction")}</CardTitle>
               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowForm(false)}><X className="h-4 w-4" /></Button>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleAdd} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value as any})} className="h-9 rounded-md border border-input bg-background px-3 text-sm">
+                <select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value as any})} className="input-field">
                   <option value="expense">{t("expense")}</option>
                   <option value="income">{t("income")}</option>
                 </select>
-                <input type="number" step="0.01" placeholder={t("amount")} value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="h-9 rounded-md border border-input bg-background px-3 text-sm" />
-                <input type="text" placeholder={t("description")} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="h-9 rounded-md border border-input bg-background px-3 text-sm" />
-                <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="h-9 rounded-md border border-input bg-background px-3 text-sm">
+                <input type="number" step="0.01" placeholder={t("amount")} value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="input-field" />
+                <input type="text" placeholder={t("description")} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="input-field" />
+                <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="input-field">
                   {["General", "Food", "Transport", "Entertainment", "Shopping", "Bills", "Health", "Savings"].map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
                 <div className="sm:col-span-2 flex gap-2">
-                  <Button type="submit" size="sm" className="flex-1">{t("submit")}</Button>
+                  <Button type="submit" size="sm" className="flex-1 shadow-sm shadow-primary/10">{t("submit")}</Button>
                   <Button type="button" variant="outline" size="sm" className="flex-1" onClick={() => setShowForm(false)}>{t("cancel")}</Button>
                 </div>
               </form>
@@ -76,17 +75,18 @@ export default function Transactions() {
           </Card>
         )}
 
-        {/* List */}
-        <Card>
+        <Card className="transition-all duration-300 hover:shadow-md">
           <CardContent className="p-0">
             {transactions.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-12">{t("noTransactions")}</p>
             ) : (
               <div className="divide-y divide-border">
                 {transactions.sort((a, b) => new Date(b.transactionDate).getTime() - new Date(a.transactionDate).getTime()).map(tx => (
-                  <div key={tx.id} className="flex items-center justify-between p-4">
+                  <div key={tx.id} className="list-item">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className={`h-2 w-2 rounded-full shrink-0 ${tx.type === "income" ? "bg-success" : "bg-destructive"}`} />
+                      <div className={`h-8 w-8 rounded-lg flex items-center justify-center shrink-0 ${tx.type === "income" ? "bg-success/10" : "bg-destructive/10"}`}>
+                        {tx.type === "income" ? <TrendingUp className="h-4 w-4 text-success" /> : <TrendingDown className="h-4 w-4 text-destructive" />}
+                      </div>
                       <div className="min-w-0">
                         <p className="text-sm font-medium truncate">{tx.description || t("noData")}</p>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -100,7 +100,7 @@ export default function Transactions() {
                       <span className={`text-sm font-semibold ${tx.type === "income" ? "text-success" : "text-destructive"}`}>
                         {tx.type === "income" ? "+" : "-"}{fmt(parseFloat(tx.amount))}
                       </span>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => { transactionsStore.delete(tx.id); refresh(); toast.success(t("transactionDeletedSuccessfully")); }}>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive transition-colors" onClick={() => { transactionsStore.delete(tx.id); refresh(); toast.success(t("transactionDeletedSuccessfully")); }}>
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     </div>

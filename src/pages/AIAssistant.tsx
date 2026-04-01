@@ -1,7 +1,8 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import { transactionsStore, investmentsStore, savingsGoalsStore, budgetsStore } from "@/lib/store";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Send, Lightbulb, Loader2, AlertTriangle, CheckCircle2, TrendingUp } from "lucide-react";
@@ -11,6 +12,7 @@ interface ChatMessage { id: string; role: "user" | "assistant"; content: string;
 
 export default function AIAssistant() {
   const { t } = useLanguage();
+  const { fmt } = useCurrency();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -36,7 +38,6 @@ export default function AIAssistant() {
     }, 1200);
   };
 
-  // Insights
   const transactions = transactionsStore.list();
   const investments = investmentsStore.list();
   const goals = savingsGoalsStore.list();
@@ -44,7 +45,6 @@ export default function AIAssistant() {
   const totalIncome = transactions.filter(t => t.type === "income").reduce((s, t) => s + parseFloat(t.amount), 0);
   const totalExpenses = transactions.filter(t => t.type === "expense").reduce((s, t) => s + parseFloat(t.amount), 0);
   const savingsRate = totalIncome > 0 ? ((totalIncome - totalExpenses) / totalIncome * 100) : 0;
-  const fmt = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
 
   const insights: { type: string; icon: any; title: string; message: string }[] = [];
   if (savingsRate < 20) insights.push({ type: "warning", icon: AlertTriangle, title: "Low Savings Rate", message: `Your savings rate is ${savingsRate.toFixed(1)}%. Aim for at least 20%.` });
@@ -63,7 +63,7 @@ export default function AIAssistant() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 animate-fade-in">
         <div>
           <h1 className="text-2xl font-bold">{t("aiAssistantTitle")}</h1>
           <p className="text-sm text-muted-foreground mt-1">{t("insightsRecommendations")}</p>
@@ -77,31 +77,33 @@ export default function AIAssistant() {
 
           <TabsContent value="chat">
             <Card className="flex flex-col" style={{ height: "calc(100vh - 16rem)" }}>
-              <CardContent className="flex-1 overflow-y-auto p-4 space-y-3">
+              <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {messages.length === 0 ? (
                   <div className="flex items-center justify-center h-full text-center">
                     <div className="space-y-3">
-                      <Lightbulb className="h-10 w-10 text-muted-foreground/40 mx-auto" />
+                      <Lightbulb className="h-10 w-10 text-muted-foreground/40 mx-auto animate-pulse-soft" />
                       <p className="text-sm text-muted-foreground">{t("startConversation")}</p>
-                      <div className="space-y-1 text-xs text-muted-foreground">
-                        <p>💬 "How should I allocate my salary?"</p>
-                        <p>📊 "Analyze my spending patterns"</p>
-                        <p>💡 "How much should I invest monthly?"</p>
+                      <div className="space-y-2 text-xs text-muted-foreground">
+                        {["💬 \"How should I allocate my salary?\"", "📊 \"Analyze my spending patterns\"", "💡 \"How much should I invest monthly?\""].map((q, i) => (
+                          <button key={i} onClick={() => { setInput(q.replace(/[💬📊💡"]/g, "").trim()); }} className="block w-full text-start px-3 py-2 rounded-lg hover:bg-muted/50 transition-colors">
+                            {q}
+                          </button>
+                        ))}
                       </div>
                     </div>
                   </div>
                 ) : (
                   <>
                     {messages.map(msg => (
-                      <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                        <div className={`max-w-[75%] px-3 py-2 rounded-xl text-sm ${msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+                      <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} animate-slide-up`}>
+                        <div className={`max-w-[75%] px-3 py-2 rounded-xl text-sm ${msg.role === "user" ? "bg-primary text-primary-foreground shadow-md shadow-primary/20" : "bg-muted"}`}>
                           <p className="whitespace-pre-wrap">{msg.content}</p>
                           <p className="text-[10px] opacity-60 mt-1">{msg.timestamp.toLocaleTimeString()}</p>
                         </div>
                       </div>
                     ))}
                     {isLoading && (
-                      <div className="flex justify-start">
+                      <div className="flex justify-start animate-slide-up">
                         <div className="bg-muted px-3 py-2 rounded-xl flex items-center gap-2">
                           <Loader2 className="h-3 w-3 animate-spin" />
                           <span className="text-xs">Thinking...</span>
@@ -111,14 +113,14 @@ export default function AIAssistant() {
                     <div ref={messagesEndRef} />
                   </>
                 )}
-              </CardContent>
+              </div>
               <div className="p-3 border-t flex gap-2">
                 <input type="text" value={input} onChange={e => setInput(e.target.value)}
                   onKeyDown={e => e.key === "Enter" && !isLoading && handleSend()}
                   placeholder={t("askAboutFinances")}
-                  className="flex-1 h-9 rounded-md border border-input bg-background px-3 text-sm"
+                  className="flex-1 input-field"
                   disabled={isLoading} />
-                <Button size="sm" onClick={handleSend} disabled={isLoading || !input.trim()}>
+                <Button size="sm" onClick={handleSend} disabled={isLoading || !input.trim()} className="shadow-sm shadow-primary/10">
                   <Send className="h-4 w-4" />
                 </Button>
               </div>
@@ -127,29 +129,27 @@ export default function AIAssistant() {
 
           <TabsContent value="insights" className="space-y-4">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card><CardContent className="p-4"><span className="text-xs text-muted-foreground">{t("totalIncome")}</span><p className="text-lg font-bold text-success">{fmt(totalIncome)}</p></CardContent></Card>
-              <Card><CardContent className="p-4"><span className="text-xs text-muted-foreground">{t("totalExpenses")}</span><p className="text-lg font-bold text-destructive">{fmt(totalExpenses)}</p></CardContent></Card>
-              <Card><CardContent className="p-4"><span className="text-xs text-muted-foreground">{t("savingsRate")}</span><p className={`text-lg font-bold ${savingsRate >= 20 ? "text-success" : "text-destructive"}`}>{savingsRate.toFixed(1)}%</p></CardContent></Card>
-              <Card><CardContent className="p-4"><span className="text-xs text-muted-foreground">{t("portfolioValue")}</span><p className="text-lg font-bold">{fmt(investments.reduce((s, i) => s + parseFloat(i.quantity) * parseFloat(i.currentPrice), 0))}</p></CardContent></Card>
+              <div className="stat-card-success"><span className="text-xs text-muted-foreground">{t("totalIncome")}</span><p className="text-lg font-bold text-success">{fmt(totalIncome)}</p></div>
+              <div className="stat-card-destructive"><span className="text-xs text-muted-foreground">{t("totalExpenses")}</span><p className="text-lg font-bold text-destructive">{fmt(totalExpenses)}</p></div>
+              <div className="stat-card"><span className="text-xs text-muted-foreground">{t("savingsRate")}</span><p className={`text-lg font-bold ${savingsRate >= 20 ? "text-success" : "text-destructive"}`}>{savingsRate.toFixed(1)}%</p></div>
+              <div className="stat-card"><span className="text-xs text-muted-foreground">{t("portfolioValue")}</span><p className="text-lg font-bold">{fmt(investments.reduce((s, i) => s + parseFloat(i.quantity) * parseFloat(i.currentPrice), 0))}</p></div>
             </div>
 
-            {insights.length === 0 ? (
-              <Card><CardContent className="py-12 text-center text-sm text-muted-foreground">Add financial data to get insights!</CardContent></Card>
-            ) : (
-              <div className="space-y-3">
-                {insights.map((insight, i) => (
-                  <Card key={i} className={insight.type === "warning" ? "border-destructive/30" : insight.type === "success" ? "border-success/30" : ""}>
-                    <CardContent className="p-4 flex items-start gap-3">
-                      <insight.icon className={`h-5 w-5 mt-0.5 shrink-0 ${insight.type === "warning" ? "text-destructive" : insight.type === "success" ? "text-success" : "text-primary"}`} />
-                      <div>
-                        <p className="font-medium text-sm">{insight.title}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">{insight.message}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
+            <div className="space-y-3">
+              {insights.map((insight, i) => (
+                <Card key={i} className={`transition-all duration-300 hover:shadow-md ${insight.type === "warning" ? "border-destructive/30 hover:shadow-destructive/10" : insight.type === "success" ? "border-success/30 hover:shadow-success/10" : "hover:shadow-primary/10"}`}>
+                  <CardContent className="p-4 flex items-start gap-3">
+                    <div className={`h-8 w-8 rounded-lg flex items-center justify-center shrink-0 ${insight.type === "warning" ? "bg-destructive/10" : insight.type === "success" ? "bg-success/10" : "bg-primary/10"}`}>
+                      <insight.icon className={`h-4 w-4 ${insight.type === "warning" ? "text-destructive" : insight.type === "success" ? "text-success" : "text-primary"}`} />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">{insight.title}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{insight.message}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </TabsContent>
         </Tabs>
       </div>
