@@ -1,18 +1,15 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import type { Tables } from "@/integrations/supabase/types";
 
-type TableName = "transactions" | "investments" | "savings_goals" | "budgets" | "lendings";
-
-export function useSupabaseTable<T extends Tables<TableName>>(table: TableName) {
+export function useSupabaseTable<T extends { id: string }>(table: string) {
   const { user } = useAuth();
   const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetch = useCallback(async () => {
     if (!user) { setData([]); setLoading(false); return; }
-    const { data: rows, error } = await supabase
+    const { data: rows, error } = await (supabase as any)
       .from(table)
       .select("*")
       .eq("user_id", user.id)
@@ -25,7 +22,7 @@ export function useSupabaseTable<T extends Tables<TableName>>(table: TableName) 
 
   const create = async (record: Record<string, any>) => {
     if (!user) return null;
-    const { data: row, error } = await supabase
+    const { data: row, error } = await (supabase as any)
       .from(table)
       .insert({ ...record, user_id: user.id })
       .select()
@@ -38,16 +35,16 @@ export function useSupabaseTable<T extends Tables<TableName>>(table: TableName) 
   };
 
   const update = async (id: string, updates: Record<string, any>) => {
-    const { error } = await supabase.from(table).update(updates).eq("id", id);
+    const { error } = await (supabase as any).from(table).update(updates).eq("id", id);
     if (!error) {
-      setData(prev => prev.map(item => (item as any).id === id ? { ...item, ...updates } : item));
+      setData(prev => prev.map(item => item.id === id ? { ...item, ...updates } : item));
     }
   };
 
   const remove = async (id: string) => {
-    const { error } = await supabase.from(table).delete().eq("id", id);
+    const { error } = await (supabase as any).from(table).delete().eq("id", id);
     if (!error) {
-      setData(prev => prev.filter(item => (item as any).id !== id));
+      setData(prev => prev.filter(item => item.id !== id));
     }
   };
 
