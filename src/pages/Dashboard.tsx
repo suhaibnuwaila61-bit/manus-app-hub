@@ -1,13 +1,11 @@
 import DashboardLayout from "@/components/DashboardLayout";
-
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCurrency } from "@/contexts/CurrencyContext";
-import { transactionsStore, investmentsStore, savingsGoalsStore, lendingsStore } from "@/lib/store";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useSupabaseTable } from "@/hooks/useSupabaseData";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TrendingUp, TrendingDown, Wallet, Target, Plus, X } from "lucide-react";
+import { TrendingUp, TrendingDown, Wallet, Target, Plus, X, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
@@ -17,46 +15,42 @@ const COLORS = ["hsl(250, 85%, 65%)", "hsl(160, 60%, 48%)", "hsl(38, 92%, 55%)",
 export default function Dashboard() {
   const { t } = useLanguage();
   const { fmt } = useCurrency();
-  const [, setRefresh] = useState(0);
-  const refresh = () => setRefresh(n => n + 1);
+  const { data: transactions, loading: txLoading, create: createTx } = useSupabaseTable<any>("transactions");
+  const { data: investments } = useSupabaseTable<any>("investments");
+  const { data: savingsGoals } = useSupabaseTable<any>("savings_goals");
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ type: "expense", amount: "", description: "", category: "General" });
 
-  const transactions = transactionsStore.list();
-  const investments = investmentsStore.list();
-  const savingsGoals = savingsGoalsStore.list();
-
-  const totalIncome = transactions.filter(t => t.type === "income").reduce((s, t) => s + parseFloat(t.amount), 0);
-  const totalExpenses = transactions.filter(t => t.type === "expense").reduce((s, t) => s + parseFloat(t.amount), 0);
-  const portfolioValue = investments.reduce((s, i) => s + parseFloat(i.quantity) * parseFloat(i.currentPrice), 0);
-  const totalSavings = savingsGoals.reduce((s, g) => s + parseFloat(g.currentAmount), 0);
+  const totalIncome = transactions.filter((t: any) => t.type === "income").reduce((s: number, t: any) => s + Number(t.amount), 0);
+  const totalExpenses = transactions.filter((t: any) => t.type === "expense").reduce((s: number, t: any) => s + Number(t.amount), 0);
+  const portfolioValue = investments.reduce((s: number, i: any) => s + Number(i.quantity) * Number(i.current_price), 0);
+  const totalSavings = savingsGoals.reduce((s: number, g: any) => s + Number(g.current_amount), 0);
   const netWorth = totalIncome + totalSavings + portfolioValue - totalExpenses;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.amount) { toast.error(t("pleaseFillAllFields")); return; }
-    transactionsStore.create({ amount: form.amount, description: form.description, type: form.type as "income" | "expense", category: form.category, transactionDate: new Date().toISOString() });
+    await createTx({ amount: parseFloat(form.amount), description: form.description, type: form.type, category: form.category, transaction_date: new Date().toISOString() });
     toast.success(t("transactionAdded"));
     setForm({ type: "expense", amount: "", description: "", category: "General" });
     setShowForm(false);
-    refresh();
   };
 
-  const last30 = transactions.filter(tx => new Date(tx.transactionDate) >= new Date(Date.now() - 30 * 86400000));
+  const last30 = transactions.filter((tx: any) => new Date(tx.transaction_date) >= new Date(Date.now() - 30 * 86400000));
   const incomeVsExpenses = (() => {
     const grouped: Record<string, { income: number; expenses: number }> = {};
-    last30.forEach(tx => {
-      const d = new Date(tx.transactionDate).toLocaleDateString();
+    last30.forEach((tx: any) => {
+      const d = new Date(tx.transaction_date).toLocaleDateString();
       if (!grouped[d]) grouped[d] = { income: 0, expenses: 0 };
-      if (tx.type === "income") grouped[d].income += parseFloat(tx.amount);
-      else grouped[d].expenses += parseFloat(tx.amount);
+      if (tx.type === "income") grouped[d].income += Number(tx.amount);
+      else grouped[d].expenses += Number(tx.amount);
     });
     return Object.entries(grouped).map(([date, data]) => ({ date, ...data })).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   })();
 
   const expensesByCategory = (() => {
     const grouped: Record<string, number> = {};
-    last30.filter(t => t.type === "expense").forEach(t => { grouped[t.category] = (grouped[t.category] || 0) + parseFloat(t.amount); });
+    last30.filter((t: any) => t.type === "expense").forEach((t: any) => { grouped[t.category] = (grouped[t.category] || 0) + Number(t.amount); });
     return Object.entries(grouped).map(([name, value]) => ({ name, value }));
   })();
 
@@ -66,6 +60,8 @@ export default function Dashboard() {
     { label: t("totalExpenses"), value: fmt(totalExpenses), icon: TrendingDown, color: "destructive" as const },
     { label: t("portfolioValue"), value: fmt(portfolioValue), icon: Target, color: "primary" as const },
   ];
+
+  if (txLoading) return <DashboardLayout><div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div></DashboardLayout>;
 
   return (
     <DashboardLayout>
@@ -88,9 +84,7 @@ export default function Dashboard() {
             </div>
             <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Select value={form.type} onValueChange={(v) => setForm({...form, type: v})}>
-                <SelectTrigger className="h-10 rounded-lg border-border/50 bg-background/50 backdrop-blur-sm focus:ring-primary/30 focus:border-primary/50 transition-all duration-300">
-                  <SelectValue />
-                </SelectTrigger>
+                <SelectTrigger className="h-10 rounded-lg border-border/50 bg-background/50 backdrop-blur-sm focus:ring-primary/30 focus:border-primary/50 transition-all duration-300"><SelectValue /></SelectTrigger>
                 <SelectContent className="border-border/50 bg-card/95 backdrop-blur-xl shadow-xl shadow-primary/10">
                   <SelectItem value="expense" className="focus:bg-primary/10 focus:text-foreground cursor-pointer">{t("expense")}</SelectItem>
                   <SelectItem value="income" className="focus:bg-primary/10 focus:text-foreground cursor-pointer">{t("income")}</SelectItem>
@@ -99,9 +93,7 @@ export default function Dashboard() {
               <input type="number" step="0.01" placeholder={t("amount")} value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} className="input-field" />
               <input type="text" placeholder={t("description")} value={form.description} onChange={e => setForm({...form, description: e.target.value})} className="input-field" />
               <Select value={form.category} onValueChange={(v) => setForm({...form, category: v})}>
-                <SelectTrigger className="h-10 rounded-lg border-border/50 bg-background/50 backdrop-blur-sm focus:ring-primary/30 focus:border-primary/50 transition-all duration-300">
-                  <SelectValue />
-                </SelectTrigger>
+                <SelectTrigger className="h-10 rounded-lg border-border/50 bg-background/50 backdrop-blur-sm focus:ring-primary/30 focus:border-primary/50 transition-all duration-300"><SelectValue /></SelectTrigger>
                 <SelectContent className="border-border/50 bg-card/95 backdrop-blur-xl shadow-xl shadow-primary/10">
                   {["General", "Food", "Transport", "Entertainment", "Shopping", "Bills", "Health", "Savings", "Salary"].map(c => (
                     <SelectItem key={c} value={c} className="focus:bg-primary/10 focus:text-foreground cursor-pointer">{c}</SelectItem>
@@ -128,12 +120,8 @@ export default function Dashboard() {
                 <div key={i} className={`stat-card${s.color === "success" ? "-success" : s.color === "destructive" ? "-destructive" : ""}`}>
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-xs font-medium text-muted-foreground">{s.label}</span>
-                    <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${
-                      s.color === "success" ? "bg-success/10" : s.color === "destructive" ? "bg-destructive/10" : "bg-primary/10"
-                    }`}>
-                      <s.icon className={`h-4 w-4 ${
-                        s.color === "success" ? "text-success" : s.color === "destructive" ? "text-destructive" : "text-primary"
-                      }`} />
+                    <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${s.color === "success" ? "bg-success/10" : s.color === "destructive" ? "bg-destructive/10" : "bg-primary/10"}`}>
+                      <s.icon className={`h-4 w-4 ${s.color === "success" ? "text-success" : s.color === "destructive" ? "text-destructive" : "text-primary"}`} />
                     </div>
                   </div>
                   <p className="text-xl font-display font-bold">{s.value}</p>
@@ -147,7 +135,7 @@ export default function Dashboard() {
                 <p className="text-sm text-muted-foreground text-center py-6">{t("noTransactions")}</p>
               ) : (
                 <div className="space-y-1">
-                  {transactions.slice(-5).reverse().map(tx => (
+                  {transactions.slice(0, 5).map((tx: any) => (
                     <div key={tx.id} className="list-item rounded-lg -mx-2 px-2">
                       <div className="flex items-center gap-3">
                         <div className={`h-9 w-9 rounded-lg flex items-center justify-center ${tx.type === "income" ? "bg-success/10" : "bg-destructive/10"}`}>
@@ -155,11 +143,11 @@ export default function Dashboard() {
                         </div>
                         <div>
                           <p className="text-sm font-medium">{tx.description || tx.category}</p>
-                          <p className="text-xs text-muted-foreground">{new Date(tx.transactionDate).toLocaleDateString()}</p>
+                          <p className="text-xs text-muted-foreground">{new Date(tx.transaction_date).toLocaleDateString()}</p>
                         </div>
                       </div>
                       <span className={`text-sm font-display font-semibold ${tx.type === "income" ? "text-success" : "text-destructive"}`}>
-                        {tx.type === "income" ? "+" : "-"}{fmt(parseFloat(tx.amount))}
+                        {tx.type === "income" ? "+" : "-"}{fmt(Number(tx.amount))}
                       </span>
                     </div>
                   ))}

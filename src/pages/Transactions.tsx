@@ -1,37 +1,35 @@
 import DashboardLayout from "@/components/DashboardLayout";
-
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCurrency } from "@/contexts/CurrencyContext";
-import { transactionsStore } from "@/lib/store";
+import { useSupabaseTable } from "@/hooks/useSupabaseData";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, X, Trash2, TrendingUp, TrendingDown } from "lucide-react";
+import { Plus, X, Trash2, TrendingUp, TrendingDown, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 export default function Transactions() {
   const { t } = useLanguage();
   const { fmt } = useCurrency();
-  const [, setRefresh] = useState(0);
-  const refresh = () => setRefresh(n => n + 1);
+  const { data: transactions, loading, create, remove } = useSupabaseTable<any>("transactions");
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({ amount: "", description: "", type: "expense" as "income" | "expense", category: "General" });
 
-  const transactions = transactionsStore.list();
-  const expenseTotal = transactions.filter(t => t.type === "expense").reduce((s, t) => s + parseFloat(t.amount), 0);
-  const incomeTotal = transactions.filter(t => t.type === "income").reduce((s, t) => s + parseFloat(t.amount), 0);
+  const expenseTotal = transactions.filter((t: any) => t.type === "expense").reduce((s: number, t: any) => s + Number(t.amount), 0);
+  const incomeTotal = transactions.filter((t: any) => t.type === "income").reduce((s: number, t: any) => s + Number(t.amount), 0);
 
-  const handleAdd = (e: React.FormEvent) => {
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.amount || !formData.description) { toast.error(t("pleaseFillAllFields")); return; }
-    transactionsStore.create({ ...formData, transactionDate: new Date().toISOString() });
+    await create({ amount: parseFloat(formData.amount), description: formData.description, type: formData.type, category: formData.category, transaction_date: new Date().toISOString() });
     toast.success(t("transactionAdded"));
     setFormData({ amount: "", description: "", type: "expense", category: "General" });
     setShowForm(false);
-    refresh();
   };
 
   const categories = ["General", "Food", "Transport", "Entertainment", "Shopping", "Bills", "Health", "Savings"];
+
+  if (loading) return <DashboardLayout><div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div></DashboardLayout>;
 
   return (
     <DashboardLayout>
@@ -60,9 +58,7 @@ export default function Transactions() {
             </div>
             <form onSubmit={handleAdd} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Select value={formData.type} onValueChange={(v) => setFormData({...formData, type: v as "income" | "expense"})}>
-                <SelectTrigger className="h-10 rounded-lg border-border/50 bg-background/50 backdrop-blur-sm focus:ring-primary/30 focus:border-primary/50 transition-all duration-300">
-                  <SelectValue />
-                </SelectTrigger>
+                <SelectTrigger className="h-10 rounded-lg border-border/50 bg-background/50 backdrop-blur-sm focus:ring-primary/30 focus:border-primary/50 transition-all duration-300"><SelectValue /></SelectTrigger>
                 <SelectContent className="border-border/50 bg-card/95 backdrop-blur-xl shadow-xl shadow-primary/10">
                   <SelectItem value="expense" className="focus:bg-primary/10 focus:text-foreground cursor-pointer">{t("expense")}</SelectItem>
                   <SelectItem value="income" className="focus:bg-primary/10 focus:text-foreground cursor-pointer">{t("income")}</SelectItem>
@@ -71,9 +67,7 @@ export default function Transactions() {
               <input type="number" step="0.01" placeholder={t("amount")} value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="input-field" />
               <input type="text" placeholder={t("description")} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="input-field" />
               <Select value={formData.category} onValueChange={(v) => setFormData({...formData, category: v})}>
-                <SelectTrigger className="h-10 rounded-lg border-border/50 bg-background/50 backdrop-blur-sm focus:ring-primary/30 focus:border-primary/50 transition-all duration-300">
-                  <SelectValue />
-                </SelectTrigger>
+                <SelectTrigger className="h-10 rounded-lg border-border/50 bg-background/50 backdrop-blur-sm focus:ring-primary/30 focus:border-primary/50 transition-all duration-300"><SelectValue /></SelectTrigger>
                 <SelectContent className="border-border/50 bg-card/95 backdrop-blur-xl shadow-xl shadow-primary/10">
                   {categories.map(c => (
                     <SelectItem key={c} value={c} className="focus:bg-primary/10 focus:text-foreground cursor-pointer">{c}</SelectItem>
@@ -93,7 +87,7 @@ export default function Transactions() {
             <p className="text-sm text-muted-foreground text-center py-12">{t("noTransactions")}</p>
           ) : (
             <div className="divide-y divide-border/50">
-              {transactions.sort((a, b) => new Date(b.transactionDate).getTime() - new Date(a.transactionDate).getTime()).map(tx => (
+              {[...transactions].sort((a: any, b: any) => new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime()).map((tx: any) => (
                 <div key={tx.id} className="list-item">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className={`h-9 w-9 rounded-lg flex items-center justify-center shrink-0 ${tx.type === "income" ? "bg-success/10" : "bg-destructive/10"}`}>
@@ -104,15 +98,15 @@ export default function Transactions() {
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <span>{tx.category}</span>
                         <span>·</span>
-                        <span>{new Date(tx.transactionDate).toLocaleDateString()}</span>
+                        <span>{new Date(tx.transaction_date).toLocaleDateString()}</span>
                       </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0 ms-3">
                     <span className={`text-sm font-display font-semibold ${tx.type === "income" ? "text-success" : "text-destructive"}`}>
-                      {tx.type === "income" ? "+" : "-"}{fmt(parseFloat(tx.amount))}
+                      {tx.type === "income" ? "+" : "-"}{fmt(Number(tx.amount))}
                     </span>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive transition-colors" onClick={() => { transactionsStore.delete(tx.id); refresh(); toast.success(t("transactionDeletedSuccessfully")); }}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive transition-colors" onClick={async () => { await remove(tx.id); toast.success(t("transactionDeletedSuccessfully")); }}>
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>

@@ -14,7 +14,228 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      budgets: {
+        Row: {
+          alert_threshold: number
+          category: string
+          created_at: string
+          id: string
+          is_active: boolean
+          limit_amount: number
+          name: string
+          period: string
+          spent: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alert_threshold?: number
+          category?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          limit_amount: number
+          name: string
+          period?: string
+          spent?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alert_threshold?: number
+          category?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          limit_amount?: number
+          name?: string
+          period?: string
+          spent?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      investments: {
+        Row: {
+          asset_type: string
+          created_at: string
+          current_price: number
+          id: string
+          name: string | null
+          purchase_price: number
+          quantity: number
+          symbol: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          asset_type?: string
+          created_at?: string
+          current_price: number
+          id?: string
+          name?: string | null
+          purchase_price: number
+          quantity: number
+          symbol: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          asset_type?: string
+          created_at?: string
+          current_price?: number
+          id?: string
+          name?: string | null
+          purchase_price?: number
+          quantity?: number
+          symbol?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      lendings: {
+        Row: {
+          amount: number
+          amount_repaid: number
+          created_at: string
+          description: string
+          id: string
+          person_name: string
+          status: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          amount_repaid?: number
+          created_at?: string
+          description?: string
+          id?: string
+          person_name: string
+          status?: string
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          amount_repaid?: number
+          created_at?: string
+          description?: string
+          id?: string
+          person_name?: string
+          status?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          preferred_currency: string | null
+          preferred_language: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          preferred_currency?: string | null
+          preferred_language?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          preferred_currency?: string | null
+          preferred_language?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      savings_goals: {
+        Row: {
+          created_at: string
+          current_amount: number
+          deadline: string | null
+          id: string
+          name: string
+          target_amount: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_amount?: number
+          deadline?: string | null
+          id?: string
+          name: string
+          target_amount: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_amount?: number
+          deadline?: string | null
+          id?: string
+          name?: string
+          target_amount?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          description: string
+          id: string
+          transaction_date: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          transaction_date?: string
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          transaction_date?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -1,44 +1,39 @@
 import DashboardLayout from "@/components/DashboardLayout";
-
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCurrency } from "@/contexts/CurrencyContext";
-import { lendingsStore } from "@/lib/store";
+import { useSupabaseTable } from "@/hooks/useSupabaseData";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, X, Trash2, Handshake } from "lucide-react";
+import { Plus, X, Trash2, Handshake, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 export default function Lendings() {
   const { t } = useLanguage();
   const { fmt } = useCurrency();
-  const [, setRefresh] = useState(0);
-  const refresh = () => setRefresh(n => n + 1);
+  const { data: lendings, loading, create, update, remove } = useSupabaseTable<any>("lendings");
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ personName: "", type: "lent" as "lent" | "borrowed", amount: "", description: "" });
 
-  const lendings = lendingsStore.list();
-  const totalLent = lendings.filter(l => l.type === "lent").reduce((s, l) => s + parseFloat(l.amount), 0);
-  const totalBorrowed = lendings.filter(l => l.type === "borrowed").reduce((s, l) => s + parseFloat(l.amount), 0);
+  const totalLent = lendings.filter((l: any) => l.type === "lent").reduce((s: number, l: any) => s + Number(l.amount), 0);
+  const totalBorrowed = lendings.filter((l: any) => l.type === "borrowed").reduce((s: number, l: any) => s + Number(l.amount), 0);
 
-  const handleAdd = (e: React.FormEvent) => {
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.personName || !form.amount) { toast.error(t("pleaseFillAllFields")); return; }
-    lendingsStore.create({ ...form, amountRepaid: "0", status: "pending" });
+    await create({ person_name: form.personName, type: form.type, amount: parseFloat(form.amount), amount_repaid: 0, description: form.description, status: "pending" });
     toast.success(t("addRecord"));
     setForm({ personName: "", type: "lent", amount: "", description: "" });
     setShowForm(false);
-    refresh();
   };
 
-  const handleRepayment = (id: number, amount: string) => {
-    const lending = lendings.find(l => l.id === id);
-    if (!lending) return;
-    const newRepaid = parseFloat(lending.amountRepaid) + parseFloat(amount);
-    lendingsStore.update(id, { amountRepaid: newRepaid.toString(), status: newRepaid >= parseFloat(lending.amount) ? "repaid" : "partial" });
+  const handleRepayment = async (id: string, amount: string, lending: any) => {
+    const newRepaid = Number(lending.amount_repaid) + parseFloat(amount);
+    await update(id, { amount_repaid: newRepaid, status: newRepaid >= Number(lending.amount) ? "repaid" : "partial" });
     toast.success(t("repayment"));
-    refresh();
   };
+
+  if (loading) return <DashboardLayout><div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div></DashboardLayout>;
 
   return (
     <DashboardLayout>
@@ -68,9 +63,7 @@ export default function Lendings() {
             <form onSubmit={handleAdd} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <input type="text" placeholder={t("personName")} value={form.personName} onChange={e => setForm({...form, personName: e.target.value})} className="input-field" />
               <Select value={form.type} onValueChange={(v) => setForm({...form, type: v as any})}>
-                <SelectTrigger className="h-10 rounded-lg border-border/50 bg-background/50 backdrop-blur-sm focus:ring-primary/30 focus:border-primary/50 transition-all duration-300">
-                  <SelectValue />
-                </SelectTrigger>
+                <SelectTrigger className="h-10 rounded-lg border-border/50 bg-background/50 backdrop-blur-sm focus:ring-primary/30 focus:border-primary/50 transition-all duration-300"><SelectValue /></SelectTrigger>
                 <SelectContent className="border-border/50 bg-card/95 backdrop-blur-xl shadow-xl shadow-primary/10">
                   <SelectItem value="lent" className="focus:bg-primary/10 focus:text-foreground cursor-pointer">{t("lent")}</SelectItem>
                   <SelectItem value="borrowed" className="focus:bg-primary/10 focus:text-foreground cursor-pointer">{t("borrowed")}</SelectItem>
@@ -95,14 +88,14 @@ export default function Lendings() {
           </div>
         ) : (
           <div className="space-y-3">
-            {lendings.map(lending => {
-              const outstanding = parseFloat(lending.amount) - parseFloat(lending.amountRepaid);
+            {lendings.map((lending: any) => {
+              const outstanding = Number(lending.amount) - Number(lending.amount_repaid);
               return (
                 <div key={lending.id} className="glass-card">
                   <div className="flex items-start justify-between mb-3">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-display font-semibold">{lending.personName}</span>
+                        <span className="font-display font-semibold">{lending.person_name}</span>
                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${lending.type === "lent" ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"}`}>
                           {t(lending.type)}
                         </span>
@@ -112,13 +105,13 @@ export default function Lendings() {
                       </div>
                       {lending.description && <p className="text-xs text-muted-foreground">{lending.description}</p>}
                     </div>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive transition-colors" onClick={() => { lendingsStore.delete(lending.id); refresh(); }}>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive transition-colors" onClick={async () => { await remove(lending.id); }}>
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                   <div className="grid grid-cols-3 gap-4 text-sm">
-                    <div><p className="text-xs text-muted-foreground">{t("amount")}</p><p className="font-display font-medium">{fmt(parseFloat(lending.amount))}</p></div>
-                    <div><p className="text-xs text-muted-foreground">{t("repaid")}</p><p className="font-display font-medium">{fmt(parseFloat(lending.amountRepaid))}</p></div>
+                    <div><p className="text-xs text-muted-foreground">{t("amount")}</p><p className="font-display font-medium">{fmt(Number(lending.amount))}</p></div>
+                    <div><p className="text-xs text-muted-foreground">{t("repaid")}</p><p className="font-display font-medium">{fmt(Number(lending.amount_repaid))}</p></div>
                     <div><p className="text-xs text-muted-foreground">{t("outstanding")}</p><p className={`font-display font-medium ${outstanding > 0 ? "text-warning" : "text-success"}`}>{fmt(outstanding)}</p></div>
                   </div>
                   {outstanding > 0 && lending.status !== "repaid" && (
@@ -126,7 +119,7 @@ export default function Lendings() {
                       <input type="number" step="0.01" placeholder={t("amount")} id={`repay-${lending.id}`} className="flex-1 h-8 input-field" />
                       <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => {
                         const input = document.getElementById(`repay-${lending.id}`) as HTMLInputElement;
-                        if (input.value) { handleRepayment(lending.id, input.value); input.value = ""; }
+                        if (input.value) { handleRepayment(lending.id, input.value, lending); input.value = ""; }
                       }}>{t("repayment")}</Button>
                     </div>
                   )}
