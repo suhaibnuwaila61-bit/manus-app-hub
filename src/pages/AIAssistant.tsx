@@ -1,8 +1,7 @@
 import DashboardLayout from "@/components/DashboardLayout";
-
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCurrency } from "@/contexts/CurrencyContext";
-import { transactionsStore, investmentsStore, savingsGoalsStore, budgetsStore } from "@/lib/store";
+import { useSupabaseTable } from "@/hooks/useSupabaseData";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Send, Lightbulb, Loader2, AlertTriangle, CheckCircle2, TrendingUp } from "lucide-react";
@@ -17,6 +16,11 @@ export default function AIAssistant() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const { data: transactions } = useSupabaseTable<any>("transactions");
+  const { data: investments } = useSupabaseTable<any>("investments");
+  const { data: goals } = useSupabaseTable<any>("savings_goals");
+  const { data: budgets } = useSupabaseTable<any>("budgets");
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
@@ -38,12 +42,8 @@ export default function AIAssistant() {
     }, 1200);
   };
 
-  const transactions = transactionsStore.list();
-  const investments = investmentsStore.list();
-  const goals = savingsGoalsStore.list();
-  const budgets = budgetsStore.list();
-  const totalIncome = transactions.filter(t => t.type === "income").reduce((s, t) => s + parseFloat(t.amount), 0);
-  const totalExpenses = transactions.filter(t => t.type === "expense").reduce((s, t) => s + parseFloat(t.amount), 0);
+  const totalIncome = transactions.filter((t: any) => t.type === "income").reduce((s: number, t: any) => s + Number(t.amount), 0);
+  const totalExpenses = transactions.filter((t: any) => t.type === "expense").reduce((s: number, t: any) => s + Number(t.amount), 0);
   const savingsRate = totalIncome > 0 ? ((totalIncome - totalExpenses) / totalIncome * 100) : 0;
 
   const insights: { type: string; icon: any; title: string; message: string }[] = [];
@@ -55,7 +55,7 @@ export default function AIAssistant() {
 
   const topCategory = (() => {
     const g: Record<string, number> = {};
-    transactions.filter(t => t.type === "expense").forEach(t => { g[t.category] = (g[t.category] || 0) + parseFloat(t.amount); });
+    transactions.filter((t: any) => t.type === "expense").forEach((t: any) => { g[t.category] = (g[t.category] || 0) + Number(t.amount); });
     const s = Object.entries(g).sort((a, b) => b[1] - a[1]);
     return s[0];
   })();
@@ -120,7 +120,6 @@ export default function AIAssistant() {
                   </>
                 )}
               </div>
-              {/* Chat input with glow effect inspired by reference */}
               <div className="p-3 border-t border-border/50 relative">
                 <div className="absolute inset-x-3 -top-px h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
                 <div className="flex gap-2">
@@ -142,7 +141,7 @@ export default function AIAssistant() {
               <div className="stat-card-success"><span className="text-xs text-muted-foreground">{t("totalIncome")}</span><p className="text-lg font-display font-bold text-success">{fmt(totalIncome)}</p></div>
               <div className="stat-card-destructive"><span className="text-xs text-muted-foreground">{t("totalExpenses")}</span><p className="text-lg font-display font-bold text-destructive">{fmt(totalExpenses)}</p></div>
               <div className="stat-card"><span className="text-xs text-muted-foreground">{t("savingsRate")}</span><p className={`text-lg font-display font-bold ${savingsRate >= 20 ? "text-success" : "text-destructive"}`}>{savingsRate.toFixed(1)}%</p></div>
-              <div className="stat-card"><span className="text-xs text-muted-foreground">{t("portfolioValue")}</span><p className="text-lg font-display font-bold">{fmt(investments.reduce((s, i) => s + parseFloat(i.quantity) * parseFloat(i.currentPrice), 0))}</p></div>
+              <div className="stat-card"><span className="text-xs text-muted-foreground">{t("portfolioValue")}</span><p className="text-lg font-display font-bold">{fmt(investments.reduce((s: number, i: any) => s + Number(i.quantity) * Number(i.current_price), 0))}</p></div>
             </div>
 
             <div className="space-y-3">

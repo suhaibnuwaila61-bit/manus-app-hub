@@ -1,12 +1,11 @@
 import DashboardLayout from "@/components/DashboardLayout";
-
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCurrency } from "@/contexts/CurrencyContext";
-import { savingsGoalsStore, budgetsStore } from "@/lib/store";
+import { useSupabaseTable } from "@/hooks/useSupabaseData";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, X, Trash2, Target } from "lucide-react";
+import { Plus, X, Trash2, Target, Loader2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -14,36 +13,33 @@ import { toast } from "sonner";
 export default function Planning() {
   const { t } = useLanguage();
   const { fmt } = useCurrency();
-  const [, setRefresh] = useState(0);
-  const refresh = () => setRefresh(n => n + 1);
+  const { data: goals, loading: goalsLoading, create: createGoal, remove: removeGoal } = useSupabaseTable<any>("savings_goals");
+  const { data: budgets, loading: budgetsLoading, create: createBudget, remove: removeBudget } = useSupabaseTable<any>("budgets");
 
   const [showGoalForm, setShowGoalForm] = useState(false);
   const [goalForm, setGoalForm] = useState({ name: "", targetAmount: "", currentAmount: "0", deadline: "" });
   const [showBudgetForm, setShowBudgetForm] = useState(false);
   const [budgetForm, setBudgetForm] = useState({ name: "", limitAmount: "", category: "General", period: "monthly", alertThreshold: "80" });
 
-  const goals = savingsGoalsStore.list();
-  const budgets = budgetsStore.list();
-
-  const handleAddGoal = (e: React.FormEvent) => {
+  const handleAddGoal = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!goalForm.name || !goalForm.targetAmount || !goalForm.deadline) { toast.error(t("pleaseFillAllFields")); return; }
-    savingsGoalsStore.create({ name: goalForm.name, targetAmount: goalForm.targetAmount, currentAmount: goalForm.currentAmount || "0", deadline: goalForm.deadline });
+    await createGoal({ name: goalForm.name, target_amount: parseFloat(goalForm.targetAmount), current_amount: parseFloat(goalForm.currentAmount) || 0, deadline: goalForm.deadline });
     toast.success(t("savingsGoalAdded"));
     setGoalForm({ name: "", targetAmount: "", currentAmount: "0", deadline: "" });
     setShowGoalForm(false);
-    refresh();
   };
 
-  const handleAddBudget = (e: React.FormEvent) => {
+  const handleAddBudget = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!budgetForm.name || !budgetForm.limitAmount) { toast.error(t("pleaseFillAllFields")); return; }
-    budgetsStore.create({ name: budgetForm.name, limitAmount: budgetForm.limitAmount, spent: "0", period: budgetForm.period, category: budgetForm.category, alertThreshold: parseInt(budgetForm.alertThreshold), isActive: true });
+    await createBudget({ name: budgetForm.name, limit_amount: parseFloat(budgetForm.limitAmount), spent: 0, period: budgetForm.period, category: budgetForm.category, alert_threshold: parseInt(budgetForm.alertThreshold), is_active: true });
     toast.success(t("budgetAdded"));
     setBudgetForm({ name: "", limitAmount: "", category: "General", period: "monthly", alertThreshold: "80" });
     setShowBudgetForm(false);
-    refresh();
   };
+
+  if (goalsLoading || budgetsLoading) return <DashboardLayout><div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div></DashboardLayout>;
 
   return (
     <DashboardLayout>
@@ -94,8 +90,8 @@ export default function Planning() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {goals.map(goal => {
-                  const pct = Math.min((parseFloat(goal.currentAmount) / parseFloat(goal.targetAmount)) * 100, 100);
+                {goals.map((goal: any) => {
+                  const pct = Math.min((Number(goal.current_amount) / Number(goal.target_amount)) * 100, 100);
                   const daysLeft = Math.ceil((new Date(goal.deadline).getTime() - Date.now()) / 86400000);
                   const done = pct >= 100;
                   return (
@@ -107,15 +103,15 @@ export default function Planning() {
                         </div>
                         <div className="flex items-center gap-1">
                           {done && <span className="text-xs font-medium text-success px-2 py-0.5 rounded-full bg-success/10">✓</span>}
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive transition-colors" onClick={() => { savingsGoalsStore.delete(goal.id); refresh(); toast.success(t("savingsGoalDeletedSuccessfully")); }}>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive transition-colors" onClick={async () => { await removeGoal(goal.id); toast.success(t("savingsGoalDeletedSuccessfully")); }}>
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         </div>
                       </div>
                       <Progress value={pct} className="h-2" />
                       <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>{fmt(parseFloat(goal.currentAmount))}</span>
-                        <span>{fmt(parseFloat(goal.targetAmount))}</span>
+                        <span>{fmt(Number(goal.current_amount))}</span>
+                        <span>{fmt(Number(goal.target_amount))}</span>
                       </div>
                     </div>
                   );
@@ -141,9 +137,7 @@ export default function Planning() {
                   <input type="text" placeholder={t("budgetName")} value={budgetForm.name} onChange={e => setBudgetForm({...budgetForm, name: e.target.value})} className="input-field" />
                   <input type="number" step="0.01" placeholder={t("limitAmount")} value={budgetForm.limitAmount} onChange={e => setBudgetForm({...budgetForm, limitAmount: e.target.value})} className="input-field" />
                   <Select value={budgetForm.period} onValueChange={(v) => setBudgetForm({...budgetForm, period: v})}>
-                    <SelectTrigger className="h-10 rounded-lg border-border/50 bg-background/50 backdrop-blur-sm focus:ring-primary/30 focus:border-primary/50 transition-all duration-300">
-                      <SelectValue />
-                    </SelectTrigger>
+                    <SelectTrigger className="h-10 rounded-lg border-border/50 bg-background/50 backdrop-blur-sm focus:ring-primary/30 focus:border-primary/50 transition-all duration-300"><SelectValue /></SelectTrigger>
                     <SelectContent className="border-border/50 bg-card/95 backdrop-blur-xl shadow-xl shadow-primary/10">
                       <SelectItem value="daily" className="focus:bg-primary/10 focus:text-foreground cursor-pointer">{t("daily")}</SelectItem>
                       <SelectItem value="weekly" className="focus:bg-primary/10 focus:text-foreground cursor-pointer">{t("weekly")}</SelectItem>
@@ -166,12 +160,12 @@ export default function Planning() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {budgets.map(budget => {
-                  const spent = parseFloat(budget.spent);
-                  const limit = parseFloat(budget.limitAmount);
+                {budgets.map((budget: any) => {
+                  const spent = Number(budget.spent);
+                  const limit = Number(budget.limit_amount);
                   const pct = limit > 0 ? (spent / limit) * 100 : 0;
                   const isOver = pct >= 100;
-                  const isAlert = pct >= budget.alertThreshold;
+                  const isAlert = pct >= budget.alert_threshold;
                   return (
                     <div key={budget.id} className={`glass-card space-y-3 ${isOver ? "hover:!border-destructive/40" : isAlert ? "hover:!border-warning/40" : ""}`}>
                       <div className="flex items-start justify-between">
@@ -179,7 +173,7 @@ export default function Planning() {
                           <p className="font-display font-semibold">{budget.name}</p>
                           <p className="text-xs text-muted-foreground capitalize">{budget.period}</p>
                         </div>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive transition-colors" onClick={() => { budgetsStore.delete(budget.id); refresh(); toast.success(t("budgetDeletedSuccessfully")); }}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive transition-colors" onClick={async () => { await removeBudget(budget.id); toast.success(t("budgetDeletedSuccessfully")); }}>
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </div>

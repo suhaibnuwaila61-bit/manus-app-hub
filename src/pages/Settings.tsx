@@ -1,21 +1,50 @@
 import DashboardLayout from "@/components/DashboardLayout";
-
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useCurrency, currencies } from "@/contexts/CurrencyContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Globe, Moon, Sun, Coins, Check } from "lucide-react";
+import { Globe, Moon, Sun, Coins, Check, LogOut, User } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 export default function Settings() {
   const { language, setLanguage, isArabic, isEnglish, t } = useLanguage();
   const { theme, setTheme } = useTheme();
   const { currency, setCurrency } = useCurrency();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    toast.success("Signed out successfully");
+    navigate("/");
+  };
 
   return (
     <DashboardLayout>
       <div className="max-w-xl mx-auto space-y-6 py-4 animate-fade-in">
         <div>
           <h1 className="text-2xl font-display font-bold">{t("settings")}</h1>
+        </div>
+
+        {/* Account */}
+        <div className="glass-card">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+              <User className="h-4 w-4 text-primary" />
+            </div>
+            <span className="font-display font-semibold">Account</span>
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Email</span>
+              <span className="text-sm font-medium">{user?.email}</span>
+            </div>
+            <Button onClick={handleSignOut} variant="outline" className="w-full border-destructive/30 text-destructive hover:bg-destructive/10" size="sm">
+              <LogOut className="h-4 w-4 me-2" /> Sign Out
+            </Button>
+          </div>
         </div>
 
         {/* Language */}
