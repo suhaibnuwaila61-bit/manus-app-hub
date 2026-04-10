@@ -16,7 +16,7 @@ export default function Home() {
     <PageTransition>
     <div className="min-h-screen bg-background orb-glow">
       <nav className="border-b border-border/50 backdrop-blur-xl bg-background/60 sticky top-0 z-50">
-        <div className="container mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="container mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <span className="text-lg font-display font-bold gradient-text">Financial Nexus</span>
           <Button onClick={handleGetStarted} className="glow-button shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/40 transition-all duration-500">
             {user ? "Open Dashboard" : "Sign In"} <ArrowRight className="ms-2 h-4 w-4" />
@@ -24,15 +24,15 @@ export default function Home() {
         </div>
       </nav>
 
-      <section className="container mx-auto px-6 pt-32 pb-24 text-center max-w-3xl animate-fade-in relative">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] rounded-full opacity-30 pointer-events-none"
+      <section className="container mx-auto px-4 sm:px-6 pt-20 sm:pt-32 pb-16 sm:pb-24 text-center max-w-3xl animate-fade-in relative">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] sm:w-[600px] h-[300px] sm:h-[400px] rounded-full opacity-30 pointer-events-none"
           style={{ background: "radial-gradient(ellipse, hsl(250 85% 65% / 0.2), hsl(270 75% 65% / 0.1), transparent 70%)" }} />
         
         <div className="relative">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-primary text-sm font-medium mb-8 backdrop-blur-sm">
             <Sparkles className="h-4 w-4 animate-pulse-soft" /> Smart Financial Management
           </div>
-          <h1 className="text-5xl md:text-6xl font-display font-bold tracking-tight mb-6 leading-[1.1]">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-display font-bold tracking-tight mb-6 leading-[1.1]">
             Take control of your
             <br />
             <span className="gradient-text">finances with clarity</span>
@@ -48,7 +48,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="container mx-auto px-6 pb-32">
+      <section className="container mx-auto px-4 sm:px-6 pb-20 sm:pb-32">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
           {[
             { icon: Wallet, title: "Track Everything", desc: "Transactions, investments, loans — all organized and visualized in one place.", color: "primary" },

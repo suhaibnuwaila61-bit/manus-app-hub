@@ -115,7 +115,7 @@ export default function Dashboard() {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               {stats.map((s, i) => (
                 <div key={i} className={`stat-card${s.color === "success" ? "-success" : s.color === "destructive" ? "-destructive" : ""}`}>
                   <div className="flex items-center justify-between mb-3">

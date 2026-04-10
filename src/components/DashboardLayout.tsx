@@ -81,7 +81,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <header className="flex h-14 items-center gap-2 border-b border-border/50 px-4 backdrop-blur-sm bg-background/60">
             <SidebarTrigger className="-ms-1" />
           </header>
-          <main className="flex-1 overflow-auto p-4 md:p-6 lg:p-8 orb-glow">
+          <main className="flex-1 overflow-x-hidden overflow-y-auto p-3 sm:p-4 md:p-6 lg:p-8 orb-glow">
             <PageTransition>
               {children}
             </PageTransition>

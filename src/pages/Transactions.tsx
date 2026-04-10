@@ -44,7 +44,7 @@ export default function Transactions() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           <div className="stat-card-success"><span className="text-xs text-muted-foreground">{t("income")}</span><p className="text-lg font-display font-bold text-success">{fmt(incomeTotal)}</p></div>
           <div className="stat-card-destructive"><span className="text-xs text-muted-foreground">{t("expense")}</span><p className="text-lg font-display font-bold text-destructive">{fmt(expenseTotal)}</p></div>
           <div className="stat-card"><span className="text-xs text-muted-foreground">{t("net")}</span><p className={`text-lg font-display font-bold ${incomeTotal - expenseTotal >= 0 ? "text-success" : "text-destructive"}`}>{fmt(incomeTotal - expenseTotal)}</p></div>

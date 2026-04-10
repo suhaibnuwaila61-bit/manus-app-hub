@@ -43,7 +43,7 @@ export default function Investments() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <div className="stat-card"><span className="text-xs text-muted-foreground">{t("totalValue")}</span><p className="text-lg font-display font-bold">{fmt(portfolioValue)}</p></div>
           <div className="stat-card"><span className="text-xs text-muted-foreground">{t("totalCost")}</span><p className="text-lg font-display font-bold">{fmt(totalCost)}</p></div>
           <div className={totalGain >= 0 ? "stat-card-success" : "stat-card-destructive"}><span className="text-xs text-muted-foreground">{t("totalGain")}</span><p className={`text-lg font-display font-bold ${totalGain >= 0 ? "text-success" : "text-destructive"}`}>{fmt(totalGain)}</p></div>
