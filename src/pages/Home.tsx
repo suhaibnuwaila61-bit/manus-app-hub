@@ -1,25 +1,34 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, BarChart3, Shield, Sparkles, Wallet, Zap } from "lucide-react";
+import { ArrowRight, ArrowLeft, BarChart3, Shield, Sparkles, Wallet, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import PageTransition from "@/components/PageTransition";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function Home() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t, isArabic } = useLanguage();
+  const ArrowIcon = isArabic ? ArrowLeft : ArrowRight;
 
   const handleGetStarted = () => {
     navigate(user ? "/dashboard" : "/auth");
   };
 
+  const features = [
+    { icon: Wallet, title: t("trackEverything"), desc: t("trackEverythingDesc"), color: "primary" },
+    { icon: BarChart3, title: t("visualAnalytics"), desc: t("visualAnalyticsDesc"), color: "accent" },
+    { icon: Shield, title: t("planBudget"), desc: t("planBudgetDesc"), color: "success" },
+  ];
+
   return (
     <PageTransition>
-    <div className="min-h-screen bg-background orb-glow">
+    <div className="min-h-screen bg-background orb-glow overflow-x-hidden">
       <nav className="border-b border-border/50 backdrop-blur-xl bg-background/60 sticky top-0 z-50">
         <div className="container mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <span className="text-lg font-display font-bold gradient-text">Financial Nexus</span>
           <Button onClick={handleGetStarted} className="glow-button shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/40 transition-all duration-500">
-            {user ? "Open Dashboard" : "Sign In"} <ArrowRight className="ms-2 h-4 w-4" />
+            {user ? t("openDashboard") : t("signIn")} <ArrowIcon className="ms-2 h-4 w-4" />
           </Button>
         </div>
       </nav>
@@ -30,32 +39,28 @@ export default function Home() {
         
         <div className="relative">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-primary text-sm font-medium mb-8 backdrop-blur-sm">
-            <Sparkles className="h-4 w-4 animate-pulse-soft" /> Smart Financial Management
+            <Sparkles className="h-4 w-4 animate-pulse-soft" /> {t("smartFinancial")}
           </div>
           <h1 className="text-3xl sm:text-5xl md:text-6xl font-display font-bold tracking-tight mb-6 leading-[1.1]">
-            Take control of your
+            {t("homeTitle")}
             <br />
-            <span className="gradient-text">finances with clarity</span>
+            <span className="gradient-text">{t("homeTitleHighlight")}</span>
           </h1>
-          <p className="text-lg text-muted-foreground mb-10 max-w-xl mx-auto leading-relaxed">
-            Track expenses, manage investments, set goals, and get AI-powered insights — all in one beautifully crafted app.
+          <p className="text-base sm:text-lg text-muted-foreground mb-10 max-w-xl mx-auto leading-relaxed">
+            {t("homeSubtitle")}
           </p>
           <div className="flex gap-4 justify-center">
             <Button size="lg" onClick={handleGetStarted} className="glow-button text-base px-8 h-12 shadow-xl shadow-primary/30 hover:shadow-2xl hover:shadow-primary/40 transition-all duration-500 hover:-translate-y-1">
-              <Zap className="h-5 w-5 me-2" /> Get Started
+              <Zap className="h-5 w-5 me-2" /> {t("getStarted")}
             </Button>
           </div>
         </div>
       </section>
 
       <section className="container mx-auto px-4 sm:px-6 pb-20 sm:pb-32">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-          {[
-            { icon: Wallet, title: "Track Everything", desc: "Transactions, investments, loans — all organized and visualized in one place.", color: "primary" },
-            { icon: BarChart3, title: "Visual Analytics", desc: "Beautiful charts and deep insights to understand your spending patterns.", color: "accent" },
-            { icon: Shield, title: "Plan & Budget", desc: "Set savings goals, create budgets, and stay on track effortlessly.", color: "success" },
-          ].map((f, i) => (
-            <div key={i} className="glass-card p-6 text-start group cursor-default">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 max-w-4xl mx-auto">
+          {features.map((f, i) => (
+            <div key={i} className="glass-card p-5 sm:p-6 text-start group cursor-default">
               <div className={`h-12 w-12 rounded-xl flex items-center justify-center mb-5 transition-all duration-500 group-hover:scale-110 ${
                 f.color === "accent" ? "bg-accent/10" : f.color === "success" ? "bg-success/10" : "bg-primary/10"
               }`}>
@@ -71,8 +76,8 @@ export default function Home() {
       </section>
 
       <footer className="border-t border-border/50 py-8 backdrop-blur-sm">
-        <div className="container mx-auto px-6 text-center text-sm text-muted-foreground">
-          © 2026 Financial Nexus — Built with precision
+        <div className="container mx-auto px-4 sm:px-6 text-center text-sm text-muted-foreground">
+          {t("footerText")}
         </div>
       </footer>
     </div>
