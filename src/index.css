@@ -109,8 +109,19 @@
     text-align: right;
   }
 
+  html[dir="rtl"] .orb-glow::before {
+    right: auto;
+    left: -120px;
+  }
+
+  html[dir="rtl"] .orb-glow::after {
+    left: auto;
+    right: -120px;
+  }
+
   html {
     scroll-behavior: smooth;
+    overflow-x: hidden;
   }
 }
 
