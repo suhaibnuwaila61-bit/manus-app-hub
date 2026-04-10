@@ -130,6 +130,15 @@ export const translations = {
     planBudget: "Plan & Budget",
     planBudgetDesc: "Set savings goals, create budgets, and stay on track effortlessly.",
     footerText: "© 2026 Financial Nexus — Built with precision",
+    // Settings
+    account: "Account",
+    email: "Email",
+    signOut: "Sign Out",
+    language: "Language",
+    theme: "Theme",
+    light: "Light",
+    dark: "Dark",
+    currency: "Currency",
   },
   ar: {
     navigation: "التنقل",
@@ -255,6 +264,15 @@ export const translations = {
     planBudget: "تخطيط وميزانية",
     planBudgetDesc: "حدد أهداف الادخار وأنشئ ميزانيات وابقَ على المسار بسهولة.",
     footerText: "© 2026 Financial Nexus — بُني بدقة",
+    // Settings
+    account: "الحساب",
+    email: "البريد الإلكتروني",
+    signOut: "تسجيل الخروج",
+    language: "اللغة",
+    theme: "المظهر",
+    light: "فاتح",
+    dark: "داكن",
+    currency: "العملة",
   }
 } as const;
 
