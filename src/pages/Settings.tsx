@@ -17,7 +17,6 @@ export default function Settings() {
 
   const handleSignOut = async () => {
     await signOut();
-    toast.success("Signed out successfully");
     navigate("/");
   };
 
