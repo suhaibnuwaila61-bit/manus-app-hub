@@ -34,15 +34,15 @@ export default function Settings() {
             <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
               <User className="h-4 w-4 text-primary" />
             </div>
-            <span className="font-display font-semibold">Account</span>
+            <span className="font-display font-semibold">{t("account")}</span>
           </div>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Email</span>
+              <span className="text-sm text-muted-foreground">{t("email")}</span>
               <span className="text-sm font-medium">{user?.email}</span>
             </div>
             <Button onClick={handleSignOut} variant="outline" className="w-full border-destructive/30 text-destructive hover:bg-destructive/10" size="sm">
-              <LogOut className="h-4 w-4 me-2" /> Sign Out
+              <LogOut className="h-4 w-4 me-2" /> {t("signOut")}
             </Button>
           </div>
         </div>
@@ -53,7 +53,7 @@ export default function Settings() {
             <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
               <Globe className="h-4 w-4 text-primary" />
             </div>
-            <span className="font-display font-semibold">Language</span>
+            <span className="font-display font-semibold">{t("language")}</span>
           </div>
           <div className="flex gap-2">
             <Button onClick={() => setLanguage("en")} variant={isEnglish ? "default" : "outline"} className={`flex-1 transition-all duration-300 ${isEnglish ? "glow-button shadow-md shadow-primary/20" : ""}`} size="sm">English</Button>
@@ -67,14 +67,14 @@ export default function Settings() {
             <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
               {theme === "dark" ? <Moon className="h-4 w-4 text-primary" /> : <Sun className="h-4 w-4 text-primary" />}
             </div>
-            <span className="font-display font-semibold">Theme</span>
+            <span className="font-display font-semibold">{t("theme")}</span>
           </div>
           <div className="flex gap-2">
             <Button onClick={() => setTheme?.("light")} variant={theme === "light" ? "default" : "outline"} className={`flex-1 transition-all duration-300 ${theme === "light" ? "glow-button shadow-md shadow-primary/20" : ""}`} size="sm">
-              <Sun className="h-4 w-4 me-1" /> Light
+              <Sun className="h-4 w-4 me-1" /> {t("light")}
             </Button>
             <Button onClick={() => setTheme?.("dark")} variant={theme === "dark" ? "default" : "outline"} className={`flex-1 transition-all duration-300 ${theme === "dark" ? "glow-button shadow-md shadow-primary/20" : ""}`} size="sm">
-              <Moon className="h-4 w-4 me-1" /> Dark
+              <Moon className="h-4 w-4 me-1" /> {t("dark")}
             </Button>
           </div>
         </div>
@@ -85,7 +85,7 @@ export default function Settings() {
             <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
               <Coins className="h-4 w-4 text-primary" />
             </div>
-            <span className="font-display font-semibold">{isArabic ? "العملة" : "Currency"}</span>
+            <span className="font-display font-semibold">{t("currency")}</span>
           </div>
           <div className="grid grid-cols-2 gap-2">
             {currencies.map(c => (
