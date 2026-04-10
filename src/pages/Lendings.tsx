@@ -48,7 +48,7 @@ export default function Lendings() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           <div className="stat-card-success"><span className="text-xs text-muted-foreground">{t("totalLent")}</span><p className="text-lg font-display font-bold text-success">{fmt(totalLent)}</p></div>
           <div className="stat-card-destructive"><span className="text-xs text-muted-foreground">{t("totalBorrowed")}</span><p className="text-lg font-display font-bold text-destructive">{fmt(totalBorrowed)}</p></div>
           <div className="stat-card"><span className="text-xs text-muted-foreground">{t("netPosition")}</span><p className={`text-lg font-display font-bold ${totalLent - totalBorrowed >= 0 ? "text-success" : "text-destructive"}`}>{fmt(totalLent - totalBorrowed)}</p></div>
@@ -109,7 +109,7 @@ export default function Lendings() {
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
-                  <div className="grid grid-cols-3 gap-4 text-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-sm">
                     <div><p className="text-xs text-muted-foreground">{t("amount")}</p><p className="font-display font-medium">{fmt(Number(lending.amount))}</p></div>
                     <div><p className="text-xs text-muted-foreground">{t("repaid")}</p><p className="font-display font-medium">{fmt(Number(lending.amount_repaid))}</p></div>
                     <div><p className="text-xs text-muted-foreground">{t("outstanding")}</p><p className={`font-display font-medium ${outstanding > 0 ? "text-warning" : "text-success"}`}>{fmt(outstanding)}</p></div>
