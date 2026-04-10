@@ -27,7 +27,7 @@ const menuItems = [
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { t, language, setLanguage } = useLanguage();
+  const { t, language, setLanguage, isArabic } = useLanguage();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
@@ -35,7 +35,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <SidebarProvider defaultOpen={true}>
       <div className="min-h-screen flex w-full">
-        <Sidebar collapsible="icon" className="border-r border-sidebar-border/50 backdrop-blur-xl bg-sidebar-background/80">
+        <Sidebar
+          side={isArabic ? "right" : "left"}
+          collapsible="icon"
+          className={`${isArabic ? "border-l" : "border-r"} border-sidebar-border/50 backdrop-blur-xl bg-sidebar-background/80`}
+        >
           <SidebarHeader className="h-16 justify-center">
             <div className="flex items-center gap-3 px-2">
               <SidebarTrigger className="h-8 w-8 shrink-0" />
