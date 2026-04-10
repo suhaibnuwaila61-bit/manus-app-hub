@@ -109,7 +109,7 @@ export default function Dashboard() {
         )}
 
         <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList className="bg-card/50 backdrop-blur-sm border border-border/50">
+          <TabsList className="grid w-full max-w-[340px] grid-cols-2 bg-card/50 backdrop-blur-sm border border-border/50 sm:w-fit">
             <TabsTrigger value="overview">{t("overview")}</TabsTrigger>
             <TabsTrigger value="analytics">{t("analytics")}</TabsTrigger>
           </TabsList>
