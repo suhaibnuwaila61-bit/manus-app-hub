@@ -42,7 +42,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         >
           <SidebarHeader className="h-16 justify-center">
             <div className="flex items-center gap-3 px-2">
-              <SidebarTrigger className="h-8 w-8 shrink-0" />
               <span className="font-display font-bold text-base tracking-tight truncate gradient-text group-data-[collapsible=icon]:hidden">
                 Financial Nexus
               </span>
