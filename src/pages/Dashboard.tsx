@@ -9,6 +9,7 @@ import { TrendingUp, TrendingDown, Wallet, Target, Plus, X, Loader2 } from "luci
 import { useState } from "react";
 import { toast } from "sonner";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { motion } from "framer-motion";
 
 const COLORS = ["hsl(250, 85%, 65%)", "hsl(160, 60%, 48%)", "hsl(38, 92%, 55%)", "hsl(270, 75%, 65%)", "hsl(0, 72%, 60%)", "hsl(190, 90%, 50%)"];
 
