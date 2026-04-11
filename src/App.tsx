@@ -7,7 +7,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
 import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import { AnimatePresence } from "framer-motion";
+
 import { useEffect } from "react";
 import Home from "./pages/Home";
 import Auth from "./pages/Auth";
