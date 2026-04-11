@@ -98,6 +98,11 @@
     @apply border-border;
   }
 
+  html {
+    overflow-y: scroll;
+    overflow-x: hidden;
+  }
+
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Inter', system-ui, sans-serif;
