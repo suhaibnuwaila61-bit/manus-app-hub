@@ -15,6 +15,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { LayoutDashboard, Wallet, TrendingUp, Target, Handshake, Bot, Settings, Moon, Sun, Globe } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useEffect, useRef } from "react";
 
 const menuItems = [
   { icon: LayoutDashboard, labelKey: "dashboard" as const, path: "/dashboard" },
@@ -31,10 +32,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
+  const contentRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    contentRef.current?.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [location.pathname]);
 
   return (
     <SidebarProvider defaultOpen={true}>
-      <div className="min-h-screen flex w-full">
+      <div className="min-h-screen flex w-full overflow-x-clip">
         <Sidebar
           side={isArabic ? "right" : "left"}
           collapsible="icon"
@@ -80,11 +86,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </Button>
           </div>
         </Sidebar>
-        <SidebarInset>
-          <header className="flex h-14 items-center gap-2 border-b border-border/50 px-4 backdrop-blur-sm bg-background/60">
+        <SidebarInset className="overflow-x-hidden">
+          <header className="sticky top-0 z-20 flex h-14 items-center gap-2 border-b border-border/50 px-4 backdrop-blur-sm bg-background/80">
             <SidebarTrigger className="-ms-1" />
           </header>
-          <main className="flex-1 overflow-x-hidden overflow-y-auto p-3 sm:p-4 md:p-6 lg:p-8 orb-glow">
+          <main ref={contentRef} className="flex-1 overflow-x-hidden overflow-y-auto p-3 sm:p-4 md:p-6 lg:p-8 orb-glow overscroll-y-none">
             <PageTransition>
               {children}
             </PageTransition>
