@@ -118,15 +118,25 @@ export default function Dashboard() {
           <TabsContent value="overview" className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               {stats.map((s, i) => (
-                <div key={i} className={`stat-card${s.color === "success" ? "-success" : s.color === "destructive" ? "-destructive" : ""}`}>
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: i * 0.1, ease: "easeOut" }}
+                  whileHover={{ scale: 1.03, transition: { duration: 0.2 } }}
+                  className={`stat-card${s.color === "success" ? "-success" : s.color === "destructive" ? "-destructive" : ""} cursor-default`}
+                >
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-xs font-medium text-muted-foreground">{s.label}</span>
-                    <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${s.color === "success" ? "bg-success/10" : s.color === "destructive" ? "bg-destructive/10" : "bg-primary/10"}`}>
+                    <motion.div
+                      whileHover={{ rotate: 10 }}
+                      className={`h-8 w-8 rounded-lg flex items-center justify-center ${s.color === "success" ? "bg-success/10" : s.color === "destructive" ? "bg-destructive/10" : "bg-primary/10"}`}
+                    >
                       <s.icon className={`h-4 w-4 ${s.color === "success" ? "text-success" : s.color === "destructive" ? "text-destructive" : "text-primary"}`} />
-                    </div>
+                    </motion.div>
                   </div>
                   <p className="text-xl font-display font-bold">{s.value}</p>
-                </div>
+                </motion.div>
               ))}
             </div>
 
@@ -136,8 +146,15 @@ export default function Dashboard() {
                 <p className="text-sm text-muted-foreground text-center py-6">{t("noTransactions")}</p>
               ) : (
                 <div className="space-y-1">
-                  {transactions.slice(0, 5).map((tx: any) => (
-                    <div key={tx.id} className="list-item rounded-lg -mx-2 px-2">
+                  {transactions.slice(0, 5).map((tx: any, i: number) => (
+                    <motion.div
+                      key={tx.id}
+                      initial={{ opacity: 0, x: -16 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.35, delay: i * 0.07, ease: "easeOut" }}
+                      whileHover={{ x: 4, backgroundColor: "hsl(var(--primary) / 0.04)", transition: { duration: 0.15 } }}
+                      className="list-item rounded-lg -mx-2 px-2"
+                    >
                       <div className="flex items-center gap-3">
                         <div className={`h-9 w-9 rounded-lg flex items-center justify-center ${tx.type === "income" ? "bg-success/10" : "bg-destructive/10"}`}>
                           {tx.type === "income" ? <TrendingUp className="h-4 w-4 text-success" /> : <TrendingDown className="h-4 w-4 text-destructive" />}
@@ -150,7 +167,7 @@ export default function Dashboard() {
                       <span className={`text-sm font-display font-semibold ${tx.type === "income" ? "text-success" : "text-destructive"}`}>
                         {tx.type === "income" ? "+" : "-"}{fmt(Number(tx.amount))}
                       </span>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               )}
