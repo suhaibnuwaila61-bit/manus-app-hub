@@ -29,10 +29,17 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => { window.scrollTo({ top: 0, left: 0 }); }, [pathname]);
+  return null;
+}
+
 function AnimatedRoutes() {
   const location = useLocation();
   return (
-    <AnimatePresence mode="wait">
+    <>
+      <ScrollToTop />
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<Home />} />
         <Route path="/auth" element={<Auth />} />
@@ -45,7 +52,7 @@ function AnimatedRoutes() {
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
-    </AnimatePresence>
+    </>
   );
 }
 
