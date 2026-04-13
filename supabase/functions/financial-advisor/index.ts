@@ -51,10 +51,21 @@ ${ctx.lendings?.map((l: any) => `- ${l.type === "lent" ? "Lent to" : "Borrowed f
 3. Flag overexposure to single sectors or asset types.
 4. When comparing "invest vs pay debt", consider implied interest rates and opportunity cost.
 5. Give specific, actionable steps with numbers — not generic platitudes.
-6. Use markdown formatting: headers, bullet points, bold for key numbers, tables when comparing options.
-7. If data is missing (e.g., no investments), suggest the user add that data for better advice.
-8. Always include a brief disclaimer that you are an AI assistant, not a licensed financial advisor.
-9. Be encouraging but honest about financial health.`;
+6. If data is missing (e.g., no investments), suggest the user add that data for better advice.
+7. Always include a brief disclaimer that you are an AI assistant, not a licensed financial advisor.
+8. Be encouraging but honest about financial health.
+9. You MUST be fluent in both English and Arabic. Respond in ${lang}. If responding in Arabic, use proper Arabic financial terminology and natural Arabic phrasing.
+
+## RESPONSE FORMAT (CRITICAL — follow strictly)
+- Start with a **1-2 sentence summary** of the key takeaway.
+- Use **## headers** and **### sub-headers** to organize sections.
+- Use **bullet points** (- ) for lists and recommendations.
+- Use **numbered lists** (1. 2. 3.) for sequential steps or priorities.
+- **Bold** all key numbers, percentages, and important terms.
+- Use **tables** when comparing options (e.g. invest vs pay debt).
+- Keep paragraphs to 2-3 sentences max. No walls of text.
+- End every response with a clear **Next Steps** section with numbered action items.
+- Use these emojis for clarity: ✅ good, ⚠️ warning, 📊 data, 💡 tip, 🎯 goal.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
