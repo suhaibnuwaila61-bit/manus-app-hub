@@ -6,11 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Send, Lightbulb, Loader2, AlertTriangle, CheckCircle2, TrendingUp } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
 
 interface ChatMessage { id: string; role: "user" | "assistant"; content: string; timestamp: Date; }
 
+const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/financial-advisor`;
+
 export default function AIAssistant() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { fmt } = useCurrency();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -21,27 +24,124 @@ export default function AIAssistant() {
   const { data: investments } = useSupabaseTable<any>("investments");
   const { data: goals } = useSupabaseTable<any>("savings_goals");
   const { data: budgets } = useSupabaseTable<any>("budgets");
+  const { data: lendings } = useSupabaseTable<any>("lendings");
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
-  const handleSend = () => {
-    if (!input.trim()) return;
-    setMessages(prev => [...prev, { id: Date.now().toString(), role: "user", content: input, timestamp: new Date() }]);
-    setInput("");
-    setIsLoading(true);
-    setTimeout(() => {
-      const responses = [
-        "Based on your spending patterns, I recommend the 50/30/20 rule: 50% needs, 30% wants, 20% savings.",
-        "Your portfolio diversification looks healthy. Consider rebalancing quarterly.",
-        "I notice increased dining expenses. Consider setting a budget limit for that category.",
-        "Emergency funds should cover 3-6 months of expenses. Let me calculate your target.",
-        "Your savings goals are progressing well. You're ahead of schedule!",
-      ];
-      setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: "assistant", content: responses[Math.floor(Math.random() * responses.length)], timestamp: new Date() }]);
-      setIsLoading(false);
-    }, 1200);
+  const buildFinancialContext = () => {
+    const totalIncome = transactions.filter((t: any) => t.type === "income").reduce((s: number, t: any) => s + Number(t.amount), 0);
+    const totalExpenses = transactions.filter((t: any) => t.type === "expense").reduce((s: number, t: any) => s + Number(t.amount), 0);
+    const savingsRate = totalIncome > 0 ? ((totalIncome - totalExpenses) / totalIncome * 100) : 0;
+    const portfolioValue = investments.reduce((s: number, i: any) => s + Number(i.quantity) * Number(i.current_price), 0);
+
+    const categoryMap: Record<string, number> = {};
+    transactions.filter((t: any) => t.type === "expense").forEach((t: any) => {
+      categoryMap[t.category] = (categoryMap[t.category] || 0) + Number(t.amount);
+    });
+    const topCategories = Object.entries(categoryMap)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([category, amount]) => ({ category, amount }));
+
+    const assetTypeBreakdown: Record<string, number> = {};
+    investments.forEach((i: any) => {
+      const val = Number(i.quantity) * Number(i.current_price);
+      assetTypeBreakdown[i.asset_type] = (assetTypeBreakdown[i.asset_type] || 0) + val;
+    });
+
+    return {
+      totalIncome, totalExpenses, savingsRate, portfolioValue,
+      topCategories, assetTypeBreakdown,
+      investments: investments.map((i: any) => ({
+        symbol: i.symbol, name: i.name, asset_type: i.asset_type,
+        quantity: Number(i.quantity), current_price: Number(i.current_price), purchase_price: Number(i.purchase_price),
+      })),
+      goals: goals.map((g: any) => ({
+        name: g.name, target_amount: Number(g.target_amount), current_amount: Number(g.current_amount), deadline: g.deadline,
+      })),
+      budgets: budgets.map((b: any) => ({
+        name: b.name, category: b.category, limit_amount: Number(b.limit_amount), spent: Number(b.spent), alert_threshold: Number(b.alert_threshold),
+      })),
+      lendings: lendings.map((l: any) => ({
+        person_name: l.person_name, type: l.type, amount: Number(l.amount), amount_repaid: Number(l.amount_repaid), status: l.status,
+      })),
+    };
   };
 
+  const handleSend = async () => {
+    if (!input.trim() || isLoading) return;
+    const userMsg: ChatMessage = { id: Date.now().toString(), role: "user", content: input, timestamp: new Date() };
+    setMessages(prev => [...prev, userMsg]);
+    setInput("");
+    setIsLoading(true);
+
+    const apiMessages = [...messages, userMsg].map(m => ({ role: m.role, content: m.content }));
+    const financialContext = buildFinancialContext();
+
+    let assistantContent = "";
+    const assistantId = (Date.now() + 1).toString();
+
+    try {
+      const resp = await fetch(CHAT_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ messages: apiMessages, financialContext, language }),
+      });
+
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ error: "Something went wrong" }));
+        setMessages(prev => [...prev, { id: assistantId, role: "assistant", content: `⚠️ ${err.error || "Failed to get response. Please try again."}`, timestamp: new Date() }]);
+        setIsLoading(false);
+        return;
+      }
+
+      const reader = resp.body?.getReader();
+      if (!reader) throw new Error("No stream");
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      // Add empty assistant message
+      setMessages(prev => [...prev, { id: assistantId, role: "assistant", content: "", timestamp: new Date() }]);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        let newlineIdx: number;
+        while ((newlineIdx = buffer.indexOf("\n")) !== -1) {
+          let line = buffer.slice(0, newlineIdx);
+          buffer = buffer.slice(newlineIdx + 1);
+          if (line.endsWith("\r")) line = line.slice(0, -1);
+          if (!line.startsWith("data: ")) continue;
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === "[DONE]") break;
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content;
+            if (content) {
+              assistantContent += content;
+              const snapshot = assistantContent;
+              setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: snapshot } : m));
+            }
+          } catch { /* partial JSON, wait for more */ }
+        }
+      }
+    } catch (e) {
+      console.error("Stream error:", e);
+      if (!assistantContent) {
+        setMessages(prev => [...prev.filter(m => m.id !== assistantId), { id: assistantId, role: "assistant", content: "⚠️ Connection error. Please try again.", timestamp: new Date() }]);
+      }
+    }
+
+    setIsLoading(false);
+  };
+
+  // Insights calculations
   const totalIncome = transactions.filter((t: any) => t.type === "income").reduce((s: number, t: any) => s + Number(t.amount), 0);
   const totalExpenses = transactions.filter((t: any) => t.type === "expense").reduce((s: number, t: any) => s + Number(t.amount), 0);
   const savingsRate = totalIncome > 0 ? ((totalIncome - totalExpenses) / totalIncome * 100) : 0;
@@ -60,6 +160,10 @@ export default function AIAssistant() {
     return s[0];
   })();
   if (topCategory) insights.push({ type: "info", icon: TrendingUp, title: "Top Expense", message: `"${topCategory[0]}" at ${fmt(topCategory[1])}. Look for optimization.` });
+
+  const suggestedQuestions = language === "ar"
+    ? ["💡 هل يجب أن أسدد ديوني أم أستثمر؟", "📊 ما مستوى المخاطرة في محفظتي؟", "🎯 هل أنا على المسار الصحيح لتحقيق أهدافي؟"]
+    : ["💡 Should I pay off debt or invest first?", "📊 What's my portfolio risk level?", "🎯 Am I on track for my savings goals?"];
 
   return (
     <DashboardLayout>
@@ -86,8 +190,8 @@ export default function AIAssistant() {
                       </div>
                       <p className="text-sm text-muted-foreground">{t("startConversation")}</p>
                       <div className="space-y-2 text-xs text-muted-foreground max-w-xs mx-auto">
-                        {["💬 \"How should I allocate my salary?\"", "📊 \"Analyze my spending patterns\"", "💡 \"How much should I invest monthly?\""].map((q, i) => (
-                          <button key={i} onClick={() => { setInput(q.replace(/[💬📊💡"]/g, "").trim()); }} className="block w-full text-start px-4 py-2.5 rounded-lg border border-border/50 hover:border-primary/30 hover:bg-primary/5 transition-all duration-300">
+                        {suggestedQuestions.map((q, i) => (
+                          <button key={i} onClick={() => { setInput(q.replace(/[💬📊💡🎯"]/g, "").trim()); }} className="block w-full text-start px-4 py-2.5 rounded-lg border border-border/50 hover:border-primary/30 hover:bg-primary/5 transition-all duration-300">
                             {q}
                           </button>
                         ))}
@@ -98,21 +202,27 @@ export default function AIAssistant() {
                   <>
                     {messages.map(msg => (
                       <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} animate-slide-up`}>
-                        <div className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm ${
+                        <div className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm ${
                           msg.role === "user"
                             ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
                             : "bg-card border border-border/50"
                         }`}>
-                          <p className="whitespace-pre-wrap">{msg.content}</p>
+                          {msg.role === "assistant" ? (
+                            <div className="prose prose-sm prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+                              <ReactMarkdown>{msg.content || "..."}</ReactMarkdown>
+                            </div>
+                          ) : (
+                            <p className="whitespace-pre-wrap">{msg.content}</p>
+                          )}
                           <p className="text-[10px] opacity-50 mt-1">{msg.timestamp.toLocaleTimeString()}</p>
                         </div>
                       </div>
                     ))}
-                    {isLoading && (
+                    {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
                       <div className="flex justify-start animate-slide-up">
                         <div className="bg-card border border-border/50 px-4 py-2.5 rounded-2xl flex items-center gap-2">
                           <Loader2 className="h-3 w-3 animate-spin text-primary" />
-                          <span className="text-xs text-muted-foreground">Thinking...</span>
+                          <span className="text-xs text-muted-foreground">{language === "ar" ? "جاري التفكير..." : "Thinking..."}</span>
                         </div>
                       </div>
                     )}
@@ -129,7 +239,7 @@ export default function AIAssistant() {
                     className="flex-1 input-field"
                     disabled={isLoading} />
                   <Button size="sm" onClick={handleSend} disabled={isLoading || !input.trim()} className="glow-button shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 px-4">
-                    <Send className="h-4 w-4" />
+                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                   </Button>
                 </div>
               </div>
