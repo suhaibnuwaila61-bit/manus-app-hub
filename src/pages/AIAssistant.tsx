@@ -208,7 +208,18 @@ export default function AIAssistant() {
                             : "bg-card border border-border/50"
                         }`}>
                           {msg.role === "assistant" ? (
-                            <div className="prose prose-sm prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+                            <div className="prose prose-sm prose-invert max-w-none
+                              [&>*:first-child]:mt-0 [&>*:last-child]:mb-0
+                              [&_h2]:text-base [&_h2]:font-bold [&_h2]:mt-3 [&_h2]:mb-1.5 [&_h2]:text-foreground
+                              [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:mt-2.5 [&_h3]:mb-1 [&_h3]:text-foreground
+                              [&_ul]:my-1 [&_ul]:pl-4 [&_ol]:my-1 [&_ol]:pl-4
+                              [&_li]:my-0.5 [&_li]:text-muted-foreground
+                              [&_p]:my-1 [&_p]:text-muted-foreground [&_p]:leading-relaxed
+                              [&_strong]:text-foreground [&_strong]:font-semibold
+                              [&_table]:my-2 [&_table]:text-xs [&_table]:w-full
+                              [&_th]:px-2 [&_th]:py-1 [&_th]:text-left [&_th]:border-b [&_th]:border-border/50 [&_th]:text-foreground
+                              [&_td]:px-2 [&_td]:py-1 [&_td]:border-b [&_td]:border-border/30
+                              [&_hr]:my-2 [&_hr]:border-border/30">
                               <ReactMarkdown>{msg.content || "..."}</ReactMarkdown>
                             </div>
                           ) : (
