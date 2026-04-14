@@ -207,11 +207,9 @@ serve(async (req) => {
       const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scopes)}&access_type=offline&prompt=consent&state=gmail_oauth`;
       return new Response(JSON.stringify({ url }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-      const { code, redirect_uri } = await req.json().catch(() => ({ code: null, redirect_uri: null }));
-      // Actually re-parse
-      const body = await req.clone().json();
+
+    // Handle OAuth callback
+    if (action === "exchange_code") {
       const exchangeCode = body.code;
       const exchangeRedirect = body.redirect_uri;
 
