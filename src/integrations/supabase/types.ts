@@ -56,6 +56,48 @@ export type Database = {
         }
         Relationships: []
       }
+      gmail_sync_config: {
+        Row: {
+          access_token: string
+          created_at: string
+          email_filters: string[]
+          id: string
+          is_active: boolean
+          last_sync_at: string | null
+          refresh_token: string
+          sync_count: number
+          token_expires_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token?: string
+          created_at?: string
+          email_filters?: string[]
+          id?: string
+          is_active?: boolean
+          last_sync_at?: string | null
+          refresh_token?: string
+          sync_count?: number
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          email_filters?: string[]
+          id?: string
+          is_active?: boolean
+          last_sync_at?: string | null
+          refresh_token?: string
+          sync_count?: number
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       investment_transactions: {
         Row: {
           action: string
