@@ -240,6 +240,25 @@ export default function Investments() {
           </div>
         )}
 
+        {/* Buy More Form Modal */}
+        {buyMoreForm && (
+          <div className="glass-card animate-slide-up" style={{ borderColor: "hsl(var(--success, 142 76% 36%) / 0.3)" }}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-display font-semibold text-success">{t("buy")} — {investments.find((i: any) => i.id === buyMoreForm.id)?.symbol}</h3>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setBuyMoreForm(null)}><X className="h-4 w-4" /></Button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <input type="number" step="0.01" placeholder={t("quantity")} value={buyMoreForm.quantity} onChange={e => setBuyMoreForm({...buyMoreForm, quantity: e.target.value})} className="input-field" />
+              <input type="number" step="0.01" placeholder={t("buyPrice")} value={buyMoreForm.price} onChange={e => setBuyMoreForm({...buyMoreForm, price: e.target.value})} className="input-field" />
+              <input type="number" step="0.01" placeholder={t("fees")} value={buyMoreForm.fees} onChange={e => setBuyMoreForm({...buyMoreForm, fees: e.target.value})} className="input-field" />
+            </div>
+            <div className="flex gap-2 mt-3">
+              <Button size="sm" className="flex-1 bg-success hover:bg-success/90" onClick={handleBuyMore}>{t("buy")}</Button>
+              <Button size="sm" variant="outline" className="flex-1" onClick={() => setBuyMoreForm(null)}>{t("cancel")}</Button>
+            </div>
+          </div>
+        )}
+
         {/* Tabs */}
         <Tabs defaultValue="portfolio" className="w-full">
           <TabsList className="w-full grid grid-cols-3 bg-muted/50 backdrop-blur-sm">
