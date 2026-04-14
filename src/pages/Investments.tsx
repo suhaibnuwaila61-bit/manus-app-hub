@@ -342,15 +342,18 @@ export default function Investments() {
                               {inv.purchase_date && ` · ${format(new Date(inv.purchase_date), "MMM d, yyyy")}`}
                             </p>
                           </div>
-                          <div className="flex items-center gap-3 shrink-0 ms-3">
-                            <div className="text-end">
+                          <div className="flex items-center gap-2 shrink-0 ms-3">
+                            <div className="text-end me-1">
                               <p className="text-sm font-display font-semibold">{fmt(value)}</p>
                               <p className={`text-xs ${gain >= 0 ? "text-success" : "text-destructive"}`}>{gain >= 0 ? "+" : ""}{fmt(gain)} ({pct.toFixed(1)}%)</p>
                             </div>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-warning" onClick={(e) => { e.stopPropagation(); setSellForm({ id: inv.id, quantity: "", price: "", fees: "" }); }}>
-                              <TrendingDown className="h-3.5 w-3.5" />
+                            <Button size="sm" variant="outline" className="h-7 text-xs px-2 border-success/30 text-success hover:bg-success/10" onClick={(e) => { e.stopPropagation(); setBuyMoreForm({ id: inv.id, quantity: "", price: "", fees: "" }); }}>
+                              <TrendingUp className="h-3 w-3 me-1" />{t("buy")}
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={async (e) => { e.stopPropagation(); await remove(inv.id); toast.success(t("investmentDeletedSuccessfully")); }}>
+                            <Button size="sm" variant="outline" className="h-7 text-xs px-2 border-destructive/30 text-destructive hover:bg-destructive/10" onClick={(e) => { e.stopPropagation(); setSellForm({ id: inv.id, quantity: "", price: "", fees: "" }); }}>
+                              <TrendingDown className="h-3 w-3 me-1" />{t("sell")}
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={async (e) => { e.stopPropagation(); await remove(inv.id); toast.success(t("investmentDeletedSuccessfully")); }}>
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                             {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
