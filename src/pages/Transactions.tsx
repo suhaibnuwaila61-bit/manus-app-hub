@@ -306,6 +306,16 @@ export default function Transactions() {
                   <span className="font-medium">{new Date(selectedTx.created_at).toLocaleString()}</span>
                 </div>
               </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">{t("notes")}</label>
+                <textarea
+                  className="input-field w-full text-sm resize-none h-16"
+                  placeholder={t("notes")}
+                  value={selectedTx.notes || ""}
+                  onChange={(e) => setSelectedTx({ ...selectedTx, notes: e.target.value })}
+                  onBlur={async () => { await update(selectedTx.id, { notes: selectedTx.notes || "" }); toast.success(t("save")); }}
+                />
+              </div>
               <div className="flex gap-2 pt-2">
                 <Button variant="outline" className="flex-1" onClick={() => setSelectedTx(null)}>{t("close")}</Button>
                 <Button variant="destructive" size="sm" className="flex-1" onClick={async () => { await remove(selectedTx.id); toast.success(t("transactionDeletedSuccessfully")); setSelectedTx(null); }}>
