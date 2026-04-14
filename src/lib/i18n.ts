@@ -234,6 +234,18 @@ export const translations = {
     termsLiabilityText: "Financial Nexus shall not be liable for any indirect, incidental, or consequential damages arising from the use of the service.",
     termsChangesTitle: "Changes to Terms",
     termsChangesText: "We may update these terms from time to time. Continued use of the service after changes constitutes acceptance of the new terms.",
+    // Receipt Scan
+    scanReceipt: "Scan Receipt",
+    scanReceiptDesc: "Take a photo or upload a receipt to auto-extract transaction details",
+    takePhoto: "Take Photo",
+    uploadImage: "Upload Image",
+    scanning: "Scanning...",
+    scanSuccess: "Receipt scanned! Found {count} transaction(s)",
+    scanNoResults: "Could not extract transaction details from this image",
+    scanError: "Failed to scan receipt. Please try again.",
+    reviewTransaction: "Review Transaction",
+    confirmAdd: "Add Transaction",
+    scanAnother: "Scan Another",
   },
   ar: {
     navigation: "التنقل",
@@ -463,6 +475,18 @@ export const translations = {
     termsLiabilityText: "لن يكون Financial Nexus مسؤولاً عن أي أضرار غير مباشرة أو عرضية أو تبعية ناتجة عن استخدام الخدمة.",
     termsChangesTitle: "تغييرات الشروط",
     termsChangesText: "قد نقوم بتحديث هذه الشروط من وقت لآخر. استمرار استخدام الخدمة بعد التغييرات يعني قبول الشروط الجديدة.",
+    // Receipt Scan
+    scanReceipt: "مسح الفاتورة",
+    scanReceiptDesc: "التقط صورة أو ارفع صورة فاتورة لاستخراج تفاصيل المعاملة تلقائياً",
+    takePhoto: "التقاط صورة",
+    uploadImage: "رفع صورة",
+    scanning: "جاري المسح...",
+    scanSuccess: "تم مسح الفاتورة! تم العثور على {count} معاملة(ات)",
+    scanNoResults: "لم يتم استخراج تفاصيل المعاملة من هذه الصورة",
+    scanError: "فشل مسح الفاتورة. يرجى المحاولة مرة أخرى.",
+    reviewTransaction: "مراجعة المعاملة",
+    confirmAdd: "إضافة المعاملة",
+    scanAnother: "مسح فاتورة أخرى",
   }
 } as const;
 

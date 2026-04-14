@@ -4,8 +4,8 @@ import { useCurrency } from "@/contexts/CurrencyContext";
 import { useSupabaseTable } from "@/hooks/useSupabaseData";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, X, Trash2, TrendingUp, TrendingDown, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { Plus, X, Trash2, TrendingUp, TrendingDown, Loader2, Camera, Upload, ScanLine, Check } from "lucide-react";
+import { useState, useRef } from "react";
 import { toast } from "sonner";
 
 export default function Transactions() {
@@ -14,6 +14,13 @@ export default function Transactions() {
   const { data: transactions, loading, create, remove } = useSupabaseTable<any>("transactions");
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({ amount: "", description: "", type: "expense" as "income" | "expense", category: "General" });
+
+  // Scan state
+  const [showScan, setShowScan] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const [scannedTx, setScannedTx] = useState<any[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const expenseTotal = transactions.filter((t: any) => t.type === "expense").reduce((s: number, t: any) => s + Number(t.amount), 0);
   const incomeTotal = transactions.filter((t: any) => t.type === "income").reduce((s: number, t: any) => s + Number(t.amount), 0);
@@ -25,6 +32,72 @@ export default function Transactions() {
     toast.success(t("transactionAdded"));
     setFormData({ amount: "", description: "", type: "expense", category: "General" });
     setShowForm(false);
+  };
+
+  const handleImageSelected = async (file: File) => {
+    setScanning(true);
+    setScannedTx([]);
+
+    try {
+      const base64 = await fileToBase64(file);
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/scan-receipt`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ image: base64 }),
+        }
+      );
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error || "Scan failed");
+      }
+
+      const data = await response.json();
+      if (data.transactions && data.transactions.length > 0) {
+        setScannedTx(data.transactions);
+        toast.success(t("scanSuccess").replace("{count}", String(data.transactions.length)));
+      } else {
+        toast.info(t("scanNoResults"));
+      }
+    } catch (e: any) {
+      console.error("Scan error:", e);
+      toast.error(t("scanError"));
+    } finally {
+      setScanning(false);
+    }
+  };
+
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleImageSelected(file);
+    e.target.value = "";
+  };
+
+  const addScannedTransaction = async (tx: any, index: number) => {
+    await create({
+      amount: tx.amount,
+      description: tx.description,
+      type: tx.type,
+      category: tx.category,
+      transaction_date: tx.transaction_date || new Date().toISOString(),
+    });
+    toast.success(t("transactionAdded"));
+    setScannedTx((prev) => prev.filter((_, i) => i !== index));
   };
 
   const categories = ["General", "Food", "Transport", "Entertainment", "Shopping", "Bills", "Health", "Savings"];
@@ -39,9 +112,14 @@ export default function Transactions() {
             <h1 className="text-2xl font-display font-bold">{t("transactionHistory")}</h1>
             <p className="text-sm text-muted-foreground mt-1">{t("trackAllTransactions")}</p>
           </div>
-          <Button onClick={() => setShowForm(true)} size="sm" className="glow-button shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/40 transition-all duration-500">
-            <Plus className="h-4 w-4 me-1" /> {t("addTransaction")}
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => { setShowScan(true); setScannedTx([]); }} size="sm" variant="outline" className="border-primary/30 hover:bg-primary/10 transition-all duration-300">
+              <ScanLine className="h-4 w-4 me-1" /> {t("scanReceipt")}
+            </Button>
+            <Button onClick={() => setShowForm(true)} size="sm" className="glow-button shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/40 transition-all duration-500">
+              <Plus className="h-4 w-4 me-1" /> {t("addTransaction")}
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
@@ -49,6 +127,67 @@ export default function Transactions() {
           <div className="stat-card-destructive"><span className="text-xs text-muted-foreground">{t("expense")}</span><p className="text-lg font-display font-bold text-destructive">{fmt(expenseTotal)}</p></div>
           <div className="stat-card"><span className="text-xs text-muted-foreground">{t("net")}</span><p className={`text-lg font-display font-bold ${incomeTotal - expenseTotal >= 0 ? "text-success" : "text-destructive"}`}>{fmt(incomeTotal - expenseTotal)}</p></div>
         </div>
+
+        {/* Scan Receipt Panel */}
+        {showScan && (
+          <div className="glass-card animate-slide-up" style={{ borderColor: "hsl(var(--accent) / 0.3)" }}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <ScanLine className="h-5 w-5 text-accent" />
+                <h3 className="font-display font-semibold">{t("scanReceipt")}</h3>
+              </div>
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-primary/10" onClick={() => { setShowScan(false); setScannedTx([]); }}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">{t("scanReceiptDesc")}</p>
+
+            {scanning ? (
+              <div className="flex flex-col items-center justify-center py-8 gap-3">
+                <Loader2 className="h-10 w-10 animate-spin text-accent" />
+                <span className="text-sm text-muted-foreground">{t("scanning")}</span>
+              </div>
+            ) : scannedTx.length === 0 ? (
+              <div className="flex gap-3">
+                <Button onClick={() => cameraInputRef.current?.click()} variant="outline" className="flex-1 h-20 flex-col gap-2 border-dashed border-accent/30 hover:bg-accent/5">
+                  <Camera className="h-6 w-6 text-accent" />
+                  <span className="text-xs">{t("takePhoto")}</span>
+                </Button>
+                <Button onClick={() => fileInputRef.current?.click()} variant="outline" className="flex-1 h-20 flex-col gap-2 border-dashed border-primary/30 hover:bg-primary/5">
+                  <Upload className="h-6 w-6 text-primary" />
+                  <span className="text-xs">{t("uploadImage")}</span>
+                </Button>
+                <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileChange} />
+                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {scannedTx.map((tx, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-background/50 border border-border/50">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{tx.description}</p>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <span className={tx.type === "income" ? "text-success" : "text-destructive"}>
+                          {tx.type === "income" ? "+" : "-"}{fmt(tx.amount)}
+                        </span>
+                        <span>·</span>
+                        <span>{tx.category}</span>
+                        <span>·</span>
+                        <span>{tx.transaction_date}</span>
+                      </div>
+                    </div>
+                    <Button size="sm" className="glow-button ms-3 shrink-0" onClick={() => addScannedTransaction(tx, i)}>
+                      <Check className="h-3.5 w-3.5 me-1" /> {t("confirmAdd")}
+                    </Button>
+                  </div>
+                ))}
+                <Button variant="outline" size="sm" className="w-full" onClick={() => { setScannedTx([]); }}>
+                  <ScanLine className="h-4 w-4 me-1" /> {t("scanAnother")}
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
 
         {showForm && (
           <div className="glass-card animate-slide-up" style={{ borderColor: "hsl(var(--primary) / 0.3)" }}>
