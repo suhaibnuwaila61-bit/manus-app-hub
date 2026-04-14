@@ -105,6 +105,30 @@ export default function Investments() {
     setSellForm(null);
   };
 
+  const handleBuyMore = async () => {
+    if (!buyMoreForm) return;
+    const inv = investments.find((i: any) => i.id === buyMoreForm.id);
+    if (!inv) return;
+    const qty = parseFloat(buyMoreForm.quantity);
+    const price = parseFloat(buyMoreForm.price);
+    const fees = parseFloat(buyMoreForm.fees || "0");
+    if (!qty || !price) { toast.error(t("pleaseFillAllFields")); return; }
+
+    await createTxn({
+      investment_id: inv.id, action: "buy", quantity: qty, price_per_unit: price,
+      total_amount: qty * price, fees, notes: "", transaction_date: new Date().toISOString()
+    });
+
+    // Update investment: average purchase price and add quantity
+    const oldQty = Number(inv.quantity);
+    const oldPrice = Number(inv.purchase_price);
+    const newQty = oldQty + qty;
+    const avgPrice = (oldQty * oldPrice + qty * price) / newQty;
+    await update(inv.id, { quantity: newQty, purchase_price: avgPrice });
+    toast.success(t("investmentAdded"));
+    setBuyMoreForm(null);
+  };
+
   // ROI calculation
   const roiResult = (() => {
     const b = parseFloat(roiCalc.buyPrice), s = parseFloat(roiCalc.sellPrice), q = parseFloat(roiCalc.quantity), f = parseFloat(roiCalc.fees || "0");
