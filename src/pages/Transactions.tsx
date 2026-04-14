@@ -12,7 +12,7 @@ import { toast } from "sonner";
 export default function Transactions() {
   const { t } = useLanguage();
   const { fmt } = useCurrency();
-  const { data: transactions, loading, create, remove } = useSupabaseTable<any>("transactions");
+  const { data: transactions, loading, create, update, remove } = useSupabaseTable<any>("transactions");
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({ amount: "", description: "", type: "expense" as "income" | "expense", category: "General" });
 
@@ -277,14 +277,25 @@ export default function Transactions() {
                   </span>
                 </div>
               </div>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between py-2 border-b border-border/30">
+              <div className="space-y-3 text-sm">
+                <div className="flex items-center justify-between py-2 border-b border-border/30">
                   <span className="text-muted-foreground">{t("type")}</span>
-                  <span className="font-medium capitalize">{t(selectedTx.type)}</span>
+                  <Select value={selectedTx.type} onValueChange={async (v) => { await update(selectedTx.id, { type: v }); setSelectedTx({ ...selectedTx, type: v }); toast.success(t("save")); }}>
+                    <SelectTrigger className="w-32 h-8 text-xs border-border/50 bg-background/50"><SelectValue /></SelectTrigger>
+                    <SelectContent className="border-border/50 bg-card/95 backdrop-blur-xl">
+                      <SelectItem value="expense">{t("expense")}</SelectItem>
+                      <SelectItem value="income">{t("income")}</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div className="flex justify-between py-2 border-b border-border/30">
+                <div className="flex items-center justify-between py-2 border-b border-border/30">
                   <span className="text-muted-foreground">{t("category")}</span>
-                  <span className="font-medium">{selectedTx.category}</span>
+                  <Select value={selectedTx.category} onValueChange={async (v) => { await update(selectedTx.id, { category: v }); setSelectedTx({ ...selectedTx, category: v }); toast.success(t("save")); }}>
+                    <SelectTrigger className="w-32 h-8 text-xs border-border/50 bg-background/50"><SelectValue /></SelectTrigger>
+                    <SelectContent className="border-border/50 bg-card/95 backdrop-blur-xl">
+                      {categories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="flex justify-between py-2 border-b border-border/30">
                   <span className="text-muted-foreground">{t("date")}</span>
