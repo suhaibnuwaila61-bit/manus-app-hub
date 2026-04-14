@@ -65,18 +65,21 @@ export default function Settings() {
   };
 
   const handleConnectGmail = async () => {
-    // We need GOOGLE_CLIENT_ID from the edge function, but we'll use a simpler approach:
-    // Fetch client ID from an edge function or store it.
-    // For now, we'll call the edge function to get the OAuth URL
-    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-    if (!clientId) {
-      // Fallback: prompt via edge function
-      toast.error("Google Client ID not configured. Please set VITE_GOOGLE_CLIENT_ID.");
-      return;
+    setGmailLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("sync-gmail-transactions", {
+        body: { action: "get_auth_url", redirect_uri: window.location.origin + "/settings" },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        toast.error("Failed to get OAuth URL");
+      }
+    } catch (e: any) {
+      toast.error(e.message || "Failed to connect Gmail");
     }
-    const redirectUri = window.location.origin + "/settings";
-    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(GOOGLE_GMAIL_SCOPES)}&access_type=offline&prompt=consent&state=gmail_oauth`;
-    window.location.href = authUrl;
+    setGmailLoading(false);
   };
 
   const handleDisconnectGmail = async () => {
