@@ -76,8 +76,13 @@ export default function Home() {
       </section>
 
       <footer className="border-t border-border/50 py-8 backdrop-blur-sm">
-        <div className="container mx-auto px-4 sm:px-6 text-center text-sm text-muted-foreground">
-          {t("footerText")}
+        <div className="container mx-auto px-4 sm:px-6 text-center text-sm text-muted-foreground space-y-2">
+          <div className="flex items-center justify-center gap-4">
+            <button onClick={() => navigate("/privacy")} className="hover:text-foreground transition-colors underline-offset-4 hover:underline">{t("privacyPolicy")}</button>
+            <span className="text-border">|</span>
+            <button onClick={() => navigate("/terms")} className="hover:text-foreground transition-colors underline-offset-4 hover:underline">{t("termsOfService")}</button>
+          </div>
+          <p>{t("footerText")}</p>
         </div>
       </footer>
     </div>
