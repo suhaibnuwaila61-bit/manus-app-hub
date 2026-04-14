@@ -207,6 +207,8 @@ serve(async (req) => {
       const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scopes)}&access_type=offline&prompt=consent&state=gmail_oauth`;
       return new Response(JSON.stringify({ url }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Handle OAuth callback
     if (action === "exchange_code") {
