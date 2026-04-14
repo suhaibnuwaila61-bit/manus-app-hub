@@ -4,7 +4,7 @@ import { useCurrency } from "@/contexts/CurrencyContext";
 import { useSupabaseTable } from "@/hooks/useSupabaseData";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+
 import { Plus, X, Trash2, Handshake, Loader2, CalendarIcon, AlertTriangle } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
