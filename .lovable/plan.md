@@ -1,94 +1,67 @@
 
 
-# Real AI Financial Advisor — Implementation Plan
+# Investment & Lending Enhancement Plan
 
-## What We're Building
+## Overview
+Upgrade the Investments page into a full portfolio management tool with buy/sell transaction history, profit calculators, and cumulative margin tracking. Add dates and deadlines to the Lendings section.
 
-Replace the current fake/random responses with a real AI-powered financial advisor that:
-- **Knows your complete financial picture** — all transactions, investments, budgets, goals, and lendings are sent as context
-- **Understands risk** — analyzes your portfolio diversification, debt-to-income ratio, savings buffer
-- **Helps with decisions** — gives personalized advice like "should I invest or pay off debt first?"
-- **Streams responses** in real-time (tokens appear as they arrive)
-- **Renders markdown** for well-formatted advice with bullet points, tables, bold text
+## Database Changes
 
-## How It Works
+### 1. New table: `investment_transactions`
+Records every buy/sell action per investment:
+- `id`, `user_id`, `investment_id` (FK to investments), `action` (buy/sell), `quantity`, `price_per_unit`, `total_amount`, `fees`, `notes`, `transaction_date`, `created_at`
+- RLS: user can CRUD own records
 
-```text
-User types question
-       │
-       ▼
-Frontend collects ALL financial data
-(transactions, investments, budgets, goals, lendings)
-       │
-       ▼
-Sends { messages, financialContext } to Edge Function
-       │
-       ▼
-Edge Function builds a detailed system prompt:
-  "You are a financial advisor. Here is the user's data:
-   - Income: $X/mo, Expenses: $Y/mo
-   - Savings rate: Z%
-   - Portfolio: [stocks, bonds...]
-   - Debts/lendings: [...]
-   - Goals: [...]
-   - Budgets: [...]
-   Analyze risk, give actionable advice."
-       │
-       ▼
-Calls Lovable AI (Gemini) with streaming
-       │
-       ▼
-Tokens stream back to the UI in real-time
-```
+### 2. Alter `investments` table
+Add columns:
+- `purchase_date` (timestamptz, default now())
+- `notes` (text, default '')
+- `sector` (text, default 'other')
 
-## Implementation Steps
+### 3. Alter `lendings` table
+Add columns:
+- `start_date` (timestamptz, default now()) — when the lending/borrowing started
+- `due_date` (timestamptz, nullable) — repayment deadline
+- `interest_rate` (numeric, default 0) — optional interest %
 
-### 1. Create Edge Function (`supabase/functions/financial-advisor/index.ts`)
-- Accepts `{ messages, financialContext }` from the frontend
-- Builds a comprehensive system prompt that instructs the AI to act as a certified financial advisor
-- The system prompt includes the user's full financial snapshot (income, expenses, savings rate, portfolio breakdown, goals progress, budget utilization, lending/borrowing status)
-- Instructs the AI on risk assessment frameworks (conservative/moderate/aggressive), debt management strategies, and to always caveat that it's not a licensed advisor
-- Streams the response via SSE using Lovable AI gateway
-- Handles 429/402 errors gracefully
+## Investments Page Enhancements (`src/pages/Investments.tsx`)
 
-### 2. Update AI Assistant Page (`src/pages/AIAssistant.tsx`)
-- Before sending a message, serialize all financial data into a `financialContext` object
-- Replace the fake `setTimeout` with real streaming calls to the edge function
-- Render AI responses with `react-markdown` for proper formatting
-- Show tokens as they arrive (real-time streaming)
-- Update suggested questions to be more decision-oriented: "Should I pay off debt or invest?", "What's my risk level?", "Am I on track for my goals?"
+### New Features:
+1. **Buy/Sell Transaction Log** — Each investment shows a history of buy/sell actions. Users can record a "Sell" against an existing holding (reduces quantity, records profit/loss).
+2. **Investment Calculator** — Built-in calculator panel:
+   - ROI calculator: enter buy price, sell price, quantity, fees → shows net profit, ROI %
+   - Compound growth calculator: enter principal, rate, years → shows projected value
+3. **Cumulative Margins** — New stat cards:
+   - Realized gains (from completed sells)
+   - Unrealized gains (from current holdings)
+   - Total return % across portfolio
+4. **Portfolio breakdown by asset type** — visual summary showing allocation percentages
+5. **Sell button** on each investment — opens a sell form that records the transaction and adjusts quantity
+6. **Purchase date** shown on each investment card
+7. **Expandable investment cards** — click to see transaction history for that asset
 
-### 3. Install `react-markdown` package
-- For rendering AI responses with proper formatting (headers, lists, bold, tables)
+### New Stats:
+- Realized P&L, Unrealized P&L, Total Return %, Best/Worst performer
 
-## The System Prompt Strategy
+## Lendings Page Enhancements (`src/pages/Lendings.tsx`)
 
-The AI will receive a structured financial summary like:
+### New Features:
+1. **Start date** field in the add form (date picker)
+2. **Due date / deadline** field in the add form (date picker)
+3. **Interest rate** optional field
+4. **Visual deadline indicators**:
+   - Days remaining until due date
+   - Color-coded: green (>30 days), yellow (7-30 days), red (<7 days), gray (overdue)
+5. **Interest calculation** — if interest rate is set, show accrued interest on outstanding amount
+6. **Dates displayed** on each lending card (start date, due date with countdown)
 
-```text
-FINANCIAL SNAPSHOT:
-- Monthly Income: $5,000 | Monthly Expenses: $3,800 | Savings Rate: 24%
-- Emergency Fund: $2,000 (covers 0.5 months — target is 3-6 months)
-- Portfolio: 3 stocks worth $12,000 (80% tech — low diversification)
-- Active Goals: "House Down Payment" — $15,000/$50,000 (30%, deadline Dec 2025)
-- Budgets: Food $500/$600 (83% used), Entertainment $200/$300 (67% used)
-- Lendings: Owed $2,000 to Ahmed (pending), Borrowed $5,000 from Bank (partial repaid)
-- Top Expense Categories: Rent $1,500, Food $500, Transport $300
+## i18n Updates (`src/lib/i18n.ts`)
 
-ADVISOR RULES:
-- Assess risk tolerance based on portfolio concentration and savings buffer
-- Flag overexposure to single sectors
-- Prioritize debt repayment vs. investing based on interest rates
-- Give specific, actionable steps (not generic advice)
-- Support both English and Arabic responses based on user language
-```
+Add ~30 new translation keys for both English and Arabic covering: buy, sell, realizedGain, unrealizedGain, totalReturn, roi, compoundGrowth, principal, rate, years, projectedValue, fees, startDate, dueDate, interestRate, daysUntilDue, overdue, sellInvestment, transactionHistory, calculator, etc.
 
-This gives the AI everything it needs to provide personalized, data-driven advice on any financial decision.
-
-## Technical Details
-
-- **Model**: `google/gemini-3-flash-preview` (fast, good reasoning, no extra cost)
-- **API Key**: `LOVABLE_API_KEY` already configured — no user action needed
-- **Streaming**: SSE-based token streaming for responsive UX
-- **No data persistence**: Chat is session-only (no conversation storage needed unless requested)
+## Files to Create/Modify
+- **Migration**: New `investment_transactions` table + alter `investments` and `lendings` tables
+- **`src/pages/Investments.tsx`**: Major rewrite with tabs (Portfolio / Calculator / History), sell flow, expanded cards
+- **`src/pages/Lendings.tsx`**: Add date pickers, deadline display, interest fields
+- **`src/lib/i18n.ts`**: New translation keys in both languages
 
