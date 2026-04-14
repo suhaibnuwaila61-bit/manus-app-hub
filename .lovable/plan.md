@@ -1,67 +1,75 @@
 
 
-# Investment & Lending Enhancement Plan
+# Gmail Transaction Auto-Import — Plan
 
-## Overview
-Upgrade the Investments page into a full portfolio management tool with buy/sell transaction history, profit calculators, and cumulative margin tracking. Add dates and deadlines to the Lendings section.
+## What We're Building
 
-## Database Changes
+An integration that connects to your Gmail account, reads bank/payment notification emails, extracts transaction details (amount, description, date, type), and automatically records them in your transactions table.
 
-### 1. New table: `investment_transactions`
-Records every buy/sell action per investment:
-- `id`, `user_id`, `investment_id` (FK to investments), `action` (buy/sell), `quantity`, `price_per_unit`, `total_amount`, `fees`, `notes`, `transaction_date`, `created_at`
-- RLS: user can CRUD own records
+## How It Works
 
-### 2. Alter `investments` table
-Add columns:
-- `purchase_date` (timestamptz, default now())
-- `notes` (text, default '')
-- `sector` (text, default 'other')
+```text
+Gmail Inbox (bank notifications, receipts)
+       │
+       ▼
+Edge Function: "sync-gmail-transactions"
+  - Authenticates with Gmail API using your OAuth token
+  - Searches for emails matching bank/payment patterns
+  - Parses amount, description, date from email body/subject
+  - Uses Lovable AI (Gemini) to intelligently extract transaction data
+  - Inserts new transactions into the database
+  - Tracks last-synced email to avoid duplicates
+       │
+       ▼
+Transactions appear in your app automatically
+```
 
-### 3. Alter `lendings` table
-Add columns:
-- `start_date` (timestamptz, default now()) — when the lending/borrowing started
-- `due_date` (timestamptz, nullable) — repayment deadline
-- `interest_rate` (numeric, default 0) — optional interest %
+## Architecture
 
-## Investments Page Enhancements (`src/pages/Investments.tsx`)
+### 1. Google OAuth Setup (User Action Required)
+- You'll need to create a Google Cloud project and enable the Gmail API
+- Create OAuth 2.0 credentials (Client ID + Secret)
+- The app will have a "Connect Gmail" button in Settings that initiates the OAuth flow
+- Your Gmail access token and refresh token will be stored securely
 
-### New Features:
-1. **Buy/Sell Transaction Log** — Each investment shows a history of buy/sell actions. Users can record a "Sell" against an existing holding (reduces quantity, records profit/loss).
-2. **Investment Calculator** — Built-in calculator panel:
-   - ROI calculator: enter buy price, sell price, quantity, fees → shows net profit, ROI %
-   - Compound growth calculator: enter principal, rate, years → shows projected value
-3. **Cumulative Margins** — New stat cards:
-   - Realized gains (from completed sells)
-   - Unrealized gains (from current holdings)
-   - Total return % across portfolio
-4. **Portfolio breakdown by asset type** — visual summary showing allocation percentages
-5. **Sell button** on each investment — opens a sell form that records the transaction and adjusts quantity
-6. **Purchase date** shown on each investment card
-7. **Expandable investment cards** — click to see transaction history for that asset
+### 2. New Database Table: `gmail_sync_config`
+- Stores: `user_id`, `access_token` (encrypted), `refresh_token`, `last_sync_at`, `email_filters` (e.g., sender patterns like "noreply@bank.com"), `is_active`
 
-### New Stats:
-- Realized P&L, Unrealized P&L, Total Return %, Best/Worst performer
+### 3. Edge Function: `sync-gmail-transactions`
+- Fetches unread/new emails since last sync matching configured filters
+- Sends email content to Gemini AI to extract structured transaction data (amount, category, description, date, income/expense)
+- Creates transaction records in the database
+- Can be triggered manually ("Sync Now" button) or on a schedule
 
-## Lendings Page Enhancements (`src/pages/Lendings.tsx`)
+### 4. Settings Page Updates
+- "Connect Gmail" button with OAuth flow
+- Email filter configuration (which sender emails to watch, e.g., "alerts@mybank.com")
+- "Sync Now" button to manually trigger import
+- Sync history/log showing what was imported
 
-### New Features:
-1. **Start date** field in the add form (date picker)
-2. **Due date / deadline** field in the add form (date picker)
-3. **Interest rate** optional field
-4. **Visual deadline indicators**:
-   - Days remaining until due date
-   - Color-coded: green (>30 days), yellow (7-30 days), red (<7 days), gray (overdue)
-5. **Interest calculation** — if interest rate is set, show accrued interest on outstanding amount
-6. **Dates displayed** on each lending card (start date, due date with countdown)
+### 5. AI-Powered Parsing
+Uses Gemini to parse bank emails intelligently — handles different bank formats, languages (English/Arabic), and extracts:
+- Transaction amount
+- Type (income/expense)
+- Category (auto-detected)
+- Description
+- Date
 
-## i18n Updates (`src/lib/i18n.ts`)
+## Important Limitation
 
-Add ~30 new translation keys for both English and Arabic covering: buy, sell, realizedGain, unrealizedGain, totalReturn, roi, compoundGrowth, principal, rate, years, projectedValue, fees, startDate, dueDate, interestRate, daysUntilDue, overdue, sellInvestment, transactionHistory, calculator, etc.
+There is no built-in Gmail connector available, so you'll need to create Google Cloud OAuth credentials. I'll guide you through the setup step by step — it takes about 5 minutes.
+
+## Implementation Steps
+
+1. Create `gmail_sync_config` table with RLS policies
+2. Build the `sync-gmail-transactions` edge function with Gmail API + AI parsing
+3. Add Google OAuth flow for Gmail access in the Settings page
+4. Add "Connect Gmail" UI, email filter config, and "Sync Now" button to Settings
+5. Add i18n translations for all new Gmail-related strings (English + Arabic)
 
 ## Files to Create/Modify
-- **Migration**: New `investment_transactions` table + alter `investments` and `lendings` tables
-- **`src/pages/Investments.tsx`**: Major rewrite with tabs (Portfolio / Calculator / History), sell flow, expanded cards
-- **`src/pages/Lendings.tsx`**: Add date pickers, deadline display, interest fields
-- **`src/lib/i18n.ts`**: New translation keys in both languages
+- **Migration**: New `gmail_sync_config` table
+- **`supabase/functions/sync-gmail-transactions/index.ts`**: Gmail API + AI parsing edge function
+- **`src/pages/Settings.tsx`**: Gmail connection UI, filters, sync button
+- **`src/lib/i18n.ts`**: New translation keys
 
