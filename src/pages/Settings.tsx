@@ -10,8 +10,6 @@ import { Globe, Moon, Sun, Coins, Check, LogOut, User, Mail, RefreshCw, X, Plus,
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
-const GOOGLE_GMAIL_SCOPES = "https://www.googleapis.com/auth/gmail.readonly";
-
 export default function Settings() {
   const { language, setLanguage, isArabic, isEnglish, t } = useLanguage();
   const { theme, setTheme } = useTheme();
