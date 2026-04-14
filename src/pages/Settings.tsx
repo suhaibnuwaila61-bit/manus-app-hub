@@ -1,12 +1,11 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useCurrency, currencies } from "@/contexts/CurrencyContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Globe, Moon, Sun, Coins, Check, LogOut, User, Mail, RefreshCw, X, Plus, Loader2 } from "lucide-react";
+import { Globe, Moon, Sun, Coins, Check, LogOut, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -17,121 +16,16 @@ export default function Settings() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
 
-  const [gmailConfig, setGmailConfig] = useState<any>(null);
-  const [gmailLoading, setGmailLoading] = useState(false);
-  const [syncing, setSyncing] = useState(false);
-  const [newFilter, setNewFilter] = useState("");
-
-  const fetchGmailConfig = useCallback(async () => {
-    if (!user) return;
-    const { data } = await supabase
-      .from("gmail_sync_config")
-      .select("*")
-      .eq("user_id", user.id)
-      .maybeSingle();
-    setGmailConfig(data);
-  }, [user]);
-
-  useEffect(() => {
-    fetchGmailConfig();
-  }, [fetchGmailConfig]);
-
-  // Handle OAuth callback
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get("code");
-    const state = params.get("state");
-    if (code && state === "gmail_oauth") {
-      window.history.replaceState({}, "", window.location.pathname);
-      exchangeGmailCode(code);
-    }
-  }, []);
-
-  const exchangeGmailCode = async (code: string) => {
-    setGmailLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("sync-gmail-transactions", {
-        body: { action: "exchange_code", code, redirect_uri: window.location.origin + "/settings" },
-      });
-      if (error) throw error;
-      toast.success(t("gmailConnectedSuccess"));
-      await fetchGmailConfig();
-    } catch (e: any) {
-      toast.error(e.message || "Failed to connect Gmail");
-    }
-    setGmailLoading(false);
-  };
-
-  const handleConnectGmail = async () => {
-    setGmailLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("sync-gmail-transactions", {
-        body: { action: "get_auth_url", redirect_uri: window.location.origin + "/settings" },
-      });
-      if (error) throw error;
-      if (data?.url) {
-        window.location.href = data.url;
-      } else {
-        toast.error("Failed to get OAuth URL");
-      }
-    } catch (e: any) {
-      toast.error(e.message || "Failed to connect Gmail");
-    }
-    setGmailLoading(false);
-  };
-
-  const handleDisconnectGmail = async () => {
-    if (!user) return;
-    await supabase.from("gmail_sync_config").delete().eq("user_id", user.id);
-    setGmailConfig(null);
-    toast.success(t("gmailDisconnected"));
-  };
-
-  const handleSyncNow = async () => {
-    setSyncing(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("sync-gmail-transactions", {
-        body: { action: "sync" },
-      });
-      if (error) throw error;
-      if (data?.synced > 0) {
-        toast.success(`${t("syncSuccess")} ${data.synced} ${t("transactionsSynced")}`);
-      } else {
-        toast.info(t("noNewEmails"));
-      }
-      await fetchGmailConfig();
-    } catch (e: any) {
-      toast.error(e.message || "Sync failed");
-    }
-    setSyncing(false);
-  };
-
-  const addEmailFilter = async () => {
-    if (!newFilter.trim() || !user || !gmailConfig) return;
-    const updatedFilters = [...(gmailConfig.email_filters || []), newFilter.trim()];
-    await supabase.from("gmail_sync_config").update({ email_filters: updatedFilters }).eq("user_id", user.id);
-    setGmailConfig({ ...gmailConfig, email_filters: updatedFilters });
-    setNewFilter("");
-  };
-
-  const removeEmailFilter = async (filter: string) => {
-    if (!user || !gmailConfig) return;
-    const updatedFilters = (gmailConfig.email_filters || []).filter((f: string) => f !== filter);
-    await supabase.from("gmail_sync_config").update({ email_filters: updatedFilters }).eq("user_id", user.id);
-    setGmailConfig({ ...gmailConfig, email_filters: updatedFilters });
-  };
-
   const handleSignOut = async () => {
     await signOut();
     navigate("/");
+    toast.success(t("signOut"));
   };
 
   return (
     <DashboardLayout>
-      <div className="max-w-xl mx-auto space-y-6 py-4 animate-fade-in">
-        <div>
-          <h1 className="text-2xl font-display font-bold">{t("settings")}</h1>
-        </div>
+      <div className="max-w-lg mx-auto space-y-4">
+        <h1 className="text-2xl font-display font-bold">{t("settings")}</h1>
 
         {/* Account */}
         <div className="glass-card">
@@ -150,82 +44,6 @@ export default function Settings() {
               <LogOut className="h-4 w-4 me-2" /> {t("signOut")}
             </Button>
           </div>
-        </div>
-
-        {/* Gmail Sync */}
-        <div className="glass-card">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Mail className="h-4 w-4 text-primary" />
-            </div>
-            <div className="flex-1">
-              <span className="font-display font-semibold">{t("gmailSync")}</span>
-              <p className="text-xs text-muted-foreground">{t("gmailSetupInfo")}</p>
-            </div>
-          </div>
-
-          {!gmailConfig ? (
-            <Button onClick={handleConnectGmail} disabled={gmailLoading} className="w-full glow-button" size="sm">
-              {gmailLoading ? <Loader2 className="h-4 w-4 animate-spin me-2" /> : <Mail className="h-4 w-4 me-2" />}
-              {t("connectGmail")}
-            </Button>
-          ) : (
-            <div className="space-y-4">
-              {/* Status */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                  <span className="text-sm font-medium text-green-500">{t("gmailConnected")}</span>
-                </div>
-                <Button onClick={handleDisconnectGmail} variant="ghost" size="sm" className="text-destructive hover:text-destructive text-xs h-7">
-                  {t("disconnectGmail")}
-                </Button>
-              </div>
-
-              {/* Sync info */}
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>{t("lastSynced")}: {gmailConfig.last_sync_at ? new Date(gmailConfig.last_sync_at).toLocaleString() : t("never")}</span>
-                <span>{gmailConfig.sync_count || 0} {t("transactionsSynced")}</span>
-              </div>
-
-              {/* Email filters */}
-              <div>
-                <label className="text-sm font-medium mb-1 block">{t("emailFilters")}</label>
-                <p className="text-xs text-muted-foreground mb-2">{t("emailFiltersHint")}</p>
-                <div className="flex gap-2 mb-2">
-                  <input
-                    type="email"
-                    value={newFilter}
-                    onChange={e => setNewFilter(e.target.value)}
-                    placeholder={t("enterEmailFilter")}
-                    className="input-field flex-1 h-8 text-sm"
-                    onKeyDown={e => e.key === "Enter" && addEmailFilter()}
-                  />
-                  <Button onClick={addEmailFilter} size="sm" variant="outline" className="h-8">
-                    <Plus className="h-3 w-3 me-1" /> {t("addFilter")}
-                  </Button>
-                </div>
-                {gmailConfig.email_filters?.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {gmailConfig.email_filters.map((f: string) => (
-                      <span key={f} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-primary/10 text-primary text-xs">
-                        {f}
-                        <button onClick={() => removeEmailFilter(f)} className="hover:text-destructive">
-                          <X className="h-3 w-3" />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Sync button */}
-              <Button onClick={handleSyncNow} disabled={syncing} className="w-full glow-button" size="sm">
-                {syncing ? <Loader2 className="h-4 w-4 animate-spin me-2" /> : <RefreshCw className="h-4 w-4 me-2" />}
-                {syncing ? t("syncing") : t("syncNow")}
-              </Button>
-            </div>
-          )}
         </div>
 
         {/* Language */}
