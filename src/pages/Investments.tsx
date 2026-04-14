@@ -22,6 +22,7 @@ export default function Investments() {
   const [form, setForm] = useState({ symbol: "", asset_type: "stock", quantity: "", purchase_price: "", current_price: "", name: "", sector: "other", purchase_date: new Date(), notes: "" });
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [sellForm, setSellForm] = useState<{ id: string; quantity: string; price: string; fees: string } | null>(null);
+  const [buyMoreForm, setBuyMoreForm] = useState<{ id: string; quantity: string; price: string; fees: string } | null>(null);
 
   // Calculator state
   const [roiCalc, setRoiCalc] = useState({ buyPrice: "", sellPrice: "", quantity: "", fees: "" });
