@@ -4,6 +4,7 @@ import { useCurrency } from "@/contexts/CurrencyContext";
 import { useSupabaseTable } from "@/hooks/useSupabaseData";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus, X, Trash2, TrendingUp, TrendingDown, Loader2, Camera, Upload, ScanLine, Check } from "lucide-react";
 import { useState, useRef } from "react";
 import { toast } from "sonner";
@@ -21,6 +22,7 @@ export default function Transactions() {
   const [scannedTx, setScannedTx] = useState<any[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const [selectedTx, setSelectedTx] = useState<any>(null);
 
   const expenseTotal = transactions.filter((t: any) => t.type === "expense").reduce((s: number, t: any) => s + Number(t.amount), 0);
   const incomeTotal = transactions.filter((t: any) => t.type === "income").reduce((s: number, t: any) => s + Number(t.amount), 0);
@@ -227,7 +229,7 @@ export default function Transactions() {
           ) : (
             <div className="divide-y divide-border/50">
               {[...transactions].sort((a: any, b: any) => new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime()).map((tx: any) => (
-                <div key={tx.id} className="list-item">
+                <div key={tx.id} className="list-item cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => setSelectedTx(tx)}>
                   <div className="flex items-center gap-3 min-w-0">
                     <div className={`h-9 w-9 rounded-lg flex items-center justify-center shrink-0 ${tx.type === "income" ? "bg-success/10" : "bg-destructive/10"}`}>
                       {tx.type === "income" ? <TrendingUp className="h-4 w-4 text-success" /> : <TrendingDown className="h-4 w-4 text-destructive" />}
@@ -245,7 +247,7 @@ export default function Transactions() {
                     <span className={`text-sm font-display font-semibold ${tx.type === "income" ? "text-success" : "text-destructive"}`}>
                       {tx.type === "income" ? "+" : "-"}{fmt(Number(tx.amount))}
                     </span>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive transition-colors" onClick={async () => { await remove(tx.id); toast.success(t("transactionDeletedSuccessfully")); }}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive transition-colors" onClick={async (e) => { e.stopPropagation(); await remove(tx.id); toast.success(t("transactionDeletedSuccessfully")); }}>
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
@@ -255,6 +257,54 @@ export default function Transactions() {
           )}
         </div>
       </div>
+
+      {/* Transaction Detail Dialog */}
+      <Dialog open={!!selectedTx} onOpenChange={(open) => !open && setSelectedTx(null)}>
+        <DialogContent className="border-border/50 bg-card/95 backdrop-blur-xl shadow-xl max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display">{t("transactionDetails")}</DialogTitle>
+          </DialogHeader>
+          {selectedTx && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className={`h-11 w-11 rounded-lg flex items-center justify-center shrink-0 ${selectedTx.type === "income" ? "bg-success/10" : "bg-destructive/10"}`}>
+                  {selectedTx.type === "income" ? <TrendingUp className="h-5 w-5 text-success" /> : <TrendingDown className="h-5 w-5 text-destructive" />}
+                </div>
+                <div>
+                  <p className="font-display font-semibold">{selectedTx.description || t("noData")}</p>
+                  <span className={`text-lg font-display font-bold ${selectedTx.type === "income" ? "text-success" : "text-destructive"}`}>
+                    {selectedTx.type === "income" ? "+" : "-"}{fmt(Number(selectedTx.amount))}
+                  </span>
+                </div>
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between py-2 border-b border-border/30">
+                  <span className="text-muted-foreground">{t("type")}</span>
+                  <span className="font-medium capitalize">{t(selectedTx.type)}</span>
+                </div>
+                <div className="flex justify-between py-2 border-b border-border/30">
+                  <span className="text-muted-foreground">{t("category")}</span>
+                  <span className="font-medium">{selectedTx.category}</span>
+                </div>
+                <div className="flex justify-between py-2 border-b border-border/30">
+                  <span className="text-muted-foreground">{t("date")}</span>
+                  <span className="font-medium">{new Date(selectedTx.transaction_date).toLocaleDateString()}</span>
+                </div>
+                <div className="flex justify-between py-2">
+                  <span className="text-muted-foreground">{t("createdAt")}</span>
+                  <span className="font-medium">{new Date(selectedTx.created_at).toLocaleString()}</span>
+                </div>
+              </div>
+              <div className="flex gap-2 pt-2">
+                <Button variant="outline" className="flex-1" onClick={() => setSelectedTx(null)}>{t("close")}</Button>
+                <Button variant="destructive" size="sm" className="flex-1" onClick={async () => { await remove(selectedTx.id); toast.success(t("transactionDeletedSuccessfully")); setSelectedTx(null); }}>
+                  <Trash2 className="h-3.5 w-3.5 me-1" /> {t("delete")}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }
