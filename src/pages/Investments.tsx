@@ -5,6 +5,7 @@ import { useSupabaseTable } from "@/hooks/useSupabaseData";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus, X, Trash2, Loader2, TrendingUp, TrendingDown, Calculator, ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -173,14 +174,13 @@ export default function Investments() {
           <div className="stat-card"><span className="text-xs text-muted-foreground">{t("assets")}</span><p className="text-lg font-display font-bold">{investments.length}</p></div>
         </div>
 
-        {/* Add Form */}
-        {showForm && (
-          <div className="glass-card animate-slide-up" style={{ borderColor: "hsl(var(--primary) / 0.3)" }}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-display font-semibold">{t("addInvestment")}</h3>
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-primary/10" onClick={() => setShowForm(false)}><X className="h-4 w-4" /></Button>
-            </div>
-            <form onSubmit={handleAdd} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {/* Add Form Dialog */}
+        <Dialog open={showForm} onOpenChange={setShowForm}>
+          <DialogContent className="sm:max-w-[600px] border-border/50 bg-card/95 backdrop-blur-xl">
+            <DialogHeader>
+              <DialogTitle className="font-display">{t("addInvestment")}</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleAdd} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <input type="text" placeholder={t("symbol")} value={form.symbol} onChange={e => setForm({...form, symbol: e.target.value})} className="input-field" />
               <input type="text" placeholder={t("name")} value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="input-field" />
               <Select value={form.asset_type} onValueChange={(v) => setForm({...form, asset_type: v})}>
@@ -213,51 +213,49 @@ export default function Investments() {
                 </PopoverContent>
               </Popover>
               <input type="text" placeholder={t("notes")} value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} className="input-field" />
-              <div className="sm:col-span-2 lg:col-span-3 flex gap-2">
+              <div className="sm:col-span-2 flex gap-2">
                 <Button type="submit" size="sm" className="flex-1 glow-button shadow-md shadow-primary/20">{t("submit")}</Button>
                 <Button type="button" variant="outline" size="sm" className="flex-1" onClick={() => setShowForm(false)}>{t("cancel")}</Button>
               </div>
             </form>
-          </div>
-        )}
+          </DialogContent>
+        </Dialog>
 
-        {/* Sell Form Modal */}
-        {sellForm && (
-          <div className="glass-card animate-slide-up" style={{ borderColor: "hsl(var(--destructive) / 0.3)" }}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-display font-semibold text-destructive">{t("sellInvestment")} — {investments.find((i: any) => i.id === sellForm.id)?.symbol}</h3>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSellForm(null)}><X className="h-4 w-4" /></Button>
-            </div>
+        {/* Sell Form Dialog */}
+        <Dialog open={!!sellForm} onOpenChange={(open) => !open && setSellForm(null)}>
+          <DialogContent className="sm:max-w-[500px] border-border/50 bg-card/95 backdrop-blur-xl">
+            <DialogHeader>
+              <DialogTitle className="font-display text-destructive">{t("sellInvestment")} — {sellForm && investments.find((i: any) => i.id === sellForm.id)?.symbol}</DialogTitle>
+            </DialogHeader>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <input type="number" step="0.01" placeholder={t("quantity")} value={sellForm.quantity} onChange={e => setSellForm({...sellForm, quantity: e.target.value})} className="input-field" />
-              <input type="number" step="0.01" placeholder={t("sellPrice")} value={sellForm.price} onChange={e => setSellForm({...sellForm, price: e.target.value})} className="input-field" />
-              <input type="number" step="0.01" placeholder={t("fees")} value={sellForm.fees} onChange={e => setSellForm({...sellForm, fees: e.target.value})} className="input-field" />
+              <input type="number" step="0.01" placeholder={t("quantity")} value={sellForm?.quantity || ""} onChange={e => sellForm && setSellForm({...sellForm, quantity: e.target.value})} className="input-field" />
+              <input type="number" step="0.01" placeholder={t("sellPrice")} value={sellForm?.price || ""} onChange={e => sellForm && setSellForm({...sellForm, price: e.target.value})} className="input-field" />
+              <input type="number" step="0.01" placeholder={t("fees")} value={sellForm?.fees || ""} onChange={e => sellForm && setSellForm({...sellForm, fees: e.target.value})} className="input-field" />
             </div>
-            <div className="flex gap-2 mt-3">
+            <div className="flex gap-2 mt-1">
               <Button size="sm" variant="destructive" className="flex-1" onClick={handleSell}>{t("recordSell")}</Button>
               <Button size="sm" variant="outline" className="flex-1" onClick={() => setSellForm(null)}>{t("cancel")}</Button>
             </div>
-          </div>
-        )}
+          </DialogContent>
+        </Dialog>
 
-        {/* Buy More Form Modal */}
-        {buyMoreForm && (
-          <div className="glass-card animate-slide-up" style={{ borderColor: "hsl(var(--success, 142 76% 36%) / 0.3)" }}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-display font-semibold text-success">{t("buy")} — {investments.find((i: any) => i.id === buyMoreForm.id)?.symbol}</h3>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setBuyMoreForm(null)}><X className="h-4 w-4" /></Button>
-            </div>
+        {/* Buy More Form Dialog */}
+        <Dialog open={!!buyMoreForm} onOpenChange={(open) => !open && setBuyMoreForm(null)}>
+          <DialogContent className="sm:max-w-[500px] border-border/50 bg-card/95 backdrop-blur-xl">
+            <DialogHeader>
+              <DialogTitle className="font-display text-success">{t("buy")} — {buyMoreForm && investments.find((i: any) => i.id === buyMoreForm.id)?.symbol}</DialogTitle>
+            </DialogHeader>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <input type="number" step="0.01" placeholder={t("quantity")} value={buyMoreForm.quantity} onChange={e => setBuyMoreForm({...buyMoreForm, quantity: e.target.value})} className="input-field" />
-              <input type="number" step="0.01" placeholder={t("buyPrice")} value={buyMoreForm.price} onChange={e => setBuyMoreForm({...buyMoreForm, price: e.target.value})} className="input-field" />
-              <input type="number" step="0.01" placeholder={t("fees")} value={buyMoreForm.fees} onChange={e => setBuyMoreForm({...buyMoreForm, fees: e.target.value})} className="input-field" />
+              <input type="number" step="0.01" placeholder={t("quantity")} value={buyMoreForm?.quantity || ""} onChange={e => buyMoreForm && setBuyMoreForm({...buyMoreForm, quantity: e.target.value})} className="input-field" />
+              <input type="number" step="0.01" placeholder={t("buyPrice")} value={buyMoreForm?.price || ""} onChange={e => buyMoreForm && setBuyMoreForm({...buyMoreForm, price: e.target.value})} className="input-field" />
+              <input type="number" step="0.01" placeholder={t("fees")} value={buyMoreForm?.fees || ""} onChange={e => buyMoreForm && setBuyMoreForm({...buyMoreForm, fees: e.target.value})} className="input-field" />
             </div>
-            <div className="flex gap-2 mt-3">
+            <div className="flex gap-2 mt-1">
               <Button size="sm" className="flex-1 bg-success hover:bg-success/90" onClick={handleBuyMore}>{t("buy")}</Button>
               <Button size="sm" variant="outline" className="flex-1" onClick={() => setBuyMoreForm(null)}>{t("cancel")}</Button>
             </div>
-          </div>
-        )}
+          </DialogContent>
+        </Dialog>
 
         {/* Tabs */}
         <Tabs defaultValue="portfolio" className="w-full">
