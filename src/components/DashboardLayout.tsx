@@ -86,7 +86,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </Button>
           </div>
         </Sidebar>
-        <SidebarInset className="overflow-x-hidden">
+        <SidebarInset className="overflow-x-hidden flex flex-col h-screen">
           <header className="sticky top-0 z-20 flex h-14 items-center gap-2 border-b border-border/50 px-4 backdrop-blur-sm bg-background/80">
             <SidebarTrigger className="-ms-1" />
           </header>
