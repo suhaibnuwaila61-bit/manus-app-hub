@@ -257,6 +257,54 @@ export default function Transactions() {
           )}
         </div>
       </div>
+
+      {/* Transaction Detail Dialog */}
+      <Dialog open={!!selectedTx} onOpenChange={(open) => !open && setSelectedTx(null)}>
+        <DialogContent className="border-border/50 bg-card/95 backdrop-blur-xl shadow-xl max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display">{t("transactionDetails")}</DialogTitle>
+          </DialogHeader>
+          {selectedTx && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className={`h-11 w-11 rounded-lg flex items-center justify-center shrink-0 ${selectedTx.type === "income" ? "bg-success/10" : "bg-destructive/10"}`}>
+                  {selectedTx.type === "income" ? <TrendingUp className="h-5 w-5 text-success" /> : <TrendingDown className="h-5 w-5 text-destructive" />}
+                </div>
+                <div>
+                  <p className="font-display font-semibold">{selectedTx.description || t("noData")}</p>
+                  <span className={`text-lg font-display font-bold ${selectedTx.type === "income" ? "text-success" : "text-destructive"}`}>
+                    {selectedTx.type === "income" ? "+" : "-"}{fmt(Number(selectedTx.amount))}
+                  </span>
+                </div>
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between py-2 border-b border-border/30">
+                  <span className="text-muted-foreground">{t("type")}</span>
+                  <span className="font-medium capitalize">{t(selectedTx.type)}</span>
+                </div>
+                <div className="flex justify-between py-2 border-b border-border/30">
+                  <span className="text-muted-foreground">{t("category")}</span>
+                  <span className="font-medium">{selectedTx.category}</span>
+                </div>
+                <div className="flex justify-between py-2 border-b border-border/30">
+                  <span className="text-muted-foreground">{t("date")}</span>
+                  <span className="font-medium">{new Date(selectedTx.transaction_date).toLocaleDateString()}</span>
+                </div>
+                <div className="flex justify-between py-2">
+                  <span className="text-muted-foreground">{t("createdAt")}</span>
+                  <span className="font-medium">{new Date(selectedTx.created_at).toLocaleString()}</span>
+                </div>
+              </div>
+              <div className="flex gap-2 pt-2">
+                <Button variant="outline" className="flex-1" onClick={() => setSelectedTx(null)}>{t("close")}</Button>
+                <Button variant="destructive" size="sm" className="flex-1" onClick={async () => { await remove(selectedTx.id); toast.success(t("transactionDeletedSuccessfully")); setSelectedTx(null); }}>
+                  <Trash2 className="h-3.5 w-3.5 me-1" /> {t("delete")}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }
