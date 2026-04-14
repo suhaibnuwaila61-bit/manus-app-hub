@@ -5,9 +5,11 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useCurrency, currencies } from "@/contexts/CurrencyContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Globe, Moon, Sun, Coins, Check, LogOut, User } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Globe, Moon, Sun, Coins, Check, LogOut, User, AlertTriangle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Settings() {
   const { language, setLanguage, isArabic, isEnglish, t } = useLanguage();
@@ -15,11 +17,30 @@ export default function Settings() {
   const { currency, setCurrency } = useCurrency();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const [resetStep, setResetStep] = useState(0); // 0=closed, 1=first confirm, 2=second confirm
+  const [resetting, setResetting] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
     navigate("/");
     toast.success(t("signOut"));
+  };
+
+  const handleReset = async () => {
+    if (!user) return;
+    setResetting(true);
+    try {
+      const tables = ["transactions", "investments", "investment_transactions", "lendings", "budgets", "savings_goals"] as const;
+      for (const table of tables) {
+        await (supabase as any).from(table).delete().eq("user_id", user.id);
+      }
+      toast.success(t("resetSuccess"));
+      setResetStep(0);
+    } catch {
+      toast.error("Reset failed");
+    } finally {
+      setResetting(false);
+    }
   };
 
   return (
@@ -108,7 +129,56 @@ export default function Settings() {
             ))}
           </div>
         </div>
+
+        {/* Danger Zone - Reset */}
+        <div className="glass-card border-destructive/30">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="h-9 w-9 rounded-lg bg-destructive/10 flex items-center justify-center">
+              <AlertTriangle className="h-4 w-4 text-destructive" />
+            </div>
+            <span className="font-display font-semibold text-destructive">{t("resetAllData")}</span>
+          </div>
+          <p className="text-xs text-muted-foreground mb-3">{t("resetWarning")}</p>
+          <Button onClick={() => setResetStep(1)} variant="destructive" className="w-full" size="sm">
+            <AlertTriangle className="h-4 w-4 me-2" /> {t("resetAllData")}
+          </Button>
+        </div>
       </div>
+
+      {/* First Confirmation */}
+      <Dialog open={resetStep === 1} onOpenChange={(open) => !open && setResetStep(0)}>
+        <DialogContent className="border-destructive/30 bg-card/95 backdrop-blur-xl max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" /> {t("areYouSure")}
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">{t("resetWarning")}</p>
+          <div className="flex gap-2 pt-2">
+            <Button variant="outline" className="flex-1" onClick={() => setResetStep(0)}>{t("cancel")}</Button>
+            <Button variant="destructive" className="flex-1" onClick={() => setResetStep(2)}>{t("confirmReset")}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Second Confirmation */}
+      <Dialog open={resetStep === 2} onOpenChange={(open) => !open && setResetStep(0)}>
+        <DialogContent className="border-destructive/50 bg-card/95 backdrop-blur-xl max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5 animate-pulse" /> {t("areYouSure")}
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm font-medium text-destructive">{t("resetWarning")}</p>
+          <div className="flex gap-2 pt-2">
+            <Button variant="outline" className="flex-1" onClick={() => setResetStep(0)}>{t("cancel")}</Button>
+            <Button variant="destructive" className="flex-1" disabled={resetting} onClick={handleReset}>
+              {resetting ? <span className="animate-spin me-2">⏳</span> : <AlertTriangle className="h-4 w-4 me-1" />}
+              {t("confirmReset")}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }
