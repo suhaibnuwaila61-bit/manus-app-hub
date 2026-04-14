@@ -196,10 +196,19 @@ serve(async (req) => {
       });
     }
 
-    const { action } = await req.json().catch(() => ({ action: "sync" }));
+    const body = await req.json().catch(() => ({}));
+    const { action } = body;
 
-    // Handle OAuth callback
-    if (action === "exchange_code") {
+    // Return OAuth URL
+    if (action === "get_auth_url") {
+      const clientId = Deno.env.get("GOOGLE_CLIENT_ID")!;
+      const redirectUri = body.redirect_uri || "";
+      const scopes = "https://www.googleapis.com/auth/gmail.readonly";
+      const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scopes)}&access_type=offline&prompt=consent&state=gmail_oauth`;
+      return new Response(JSON.stringify({ url }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
       const { code, redirect_uri } = await req.json().catch(() => ({ code: null, redirect_uri: null }));
       // Actually re-parse
       const body = await req.clone().json();
