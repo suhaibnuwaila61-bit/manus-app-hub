@@ -12,7 +12,7 @@ import { toast } from "sonner";
 export default function Transactions() {
   const { t } = useLanguage();
   const { fmt } = useCurrency();
-  const { data: transactions, loading, create, remove } = useSupabaseTable<any>("transactions");
+  const { data: transactions, loading, create, update, remove } = useSupabaseTable<any>("transactions");
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({ amount: "", description: "", type: "expense" as "income" | "expense", category: "General" });
 
