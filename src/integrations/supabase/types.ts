@@ -56,6 +56,56 @@ export type Database = {
         }
         Relationships: []
       }
+      investment_transactions: {
+        Row: {
+          action: string
+          created_at: string
+          fees: number
+          id: string
+          investment_id: string
+          notes: string
+          price_per_unit: number
+          quantity: number
+          total_amount: number
+          transaction_date: string
+          user_id: string
+        }
+        Insert: {
+          action?: string
+          created_at?: string
+          fees?: number
+          id?: string
+          investment_id: string
+          notes?: string
+          price_per_unit: number
+          quantity: number
+          total_amount: number
+          transaction_date?: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          fees?: number
+          id?: string
+          investment_id?: string
+          notes?: string
+          price_per_unit?: number
+          quantity?: number
+          total_amount?: number
+          transaction_date?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investment_transactions_investment_id_fkey"
+            columns: ["investment_id"]
+            isOneToOne: false
+            referencedRelation: "investments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       investments: {
         Row: {
           asset_type: string
@@ -63,8 +113,11 @@ export type Database = {
           current_price: number
           id: string
           name: string | null
+          notes: string
+          purchase_date: string
           purchase_price: number
           quantity: number
+          sector: string
           symbol: string
           updated_at: string
           user_id: string
@@ -75,8 +128,11 @@ export type Database = {
           current_price: number
           id?: string
           name?: string | null
+          notes?: string
+          purchase_date?: string
           purchase_price: number
           quantity: number
+          sector?: string
           symbol: string
           updated_at?: string
           user_id: string
@@ -87,8 +143,11 @@ export type Database = {
           current_price?: number
           id?: string
           name?: string | null
+          notes?: string
+          purchase_date?: string
           purchase_price?: number
           quantity?: number
+          sector?: string
           symbol?: string
           updated_at?: string
           user_id?: string
@@ -101,8 +160,11 @@ export type Database = {
           amount_repaid: number
           created_at: string
           description: string
+          due_date: string | null
           id: string
+          interest_rate: number
           person_name: string
+          start_date: string
           status: string
           type: string
           updated_at: string
@@ -113,8 +175,11 @@ export type Database = {
           amount_repaid?: number
           created_at?: string
           description?: string
+          due_date?: string | null
           id?: string
+          interest_rate?: number
           person_name: string
+          start_date?: string
           status?: string
           type: string
           updated_at?: string
@@ -125,8 +190,11 @@ export type Database = {
           amount_repaid?: number
           created_at?: string
           description?: string
+          due_date?: string | null
           id?: string
+          interest_rate?: number
           person_name?: string
+          start_date?: string
           status?: string
           type?: string
           updated_at?: string
