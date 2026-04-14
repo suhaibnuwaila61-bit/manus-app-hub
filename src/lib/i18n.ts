@@ -246,6 +246,10 @@ export const translations = {
     reviewTransaction: "Review Transaction",
     confirmAdd: "Add Transaction",
     scanAnother: "Scan Another",
+    transactionDetails: "Transaction Details",
+    date: "Date",
+    createdAt: "Created At",
+    close: "Close",
   },
   ar: {
     navigation: "التنقل",
@@ -487,6 +491,10 @@ export const translations = {
     reviewTransaction: "مراجعة المعاملة",
     confirmAdd: "إضافة المعاملة",
     scanAnother: "مسح فاتورة أخرى",
+    transactionDetails: "تفاصيل المعاملة",
+    date: "التاريخ",
+    createdAt: "تاريخ الإنشاء",
+    close: "إغلاق",
   }
 } as const;
 
