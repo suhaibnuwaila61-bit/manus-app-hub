@@ -248,6 +248,11 @@ export const translations = {
     scanAnother: "Scan Another",
     transactionDetails: "Transaction Details",
     createdAt: "Created At",
+    resetAllData: "Reset All Data",
+    resetWarning: "This will permanently delete all your transactions, investments, lendings, budgets, and savings goals. This action cannot be undone.",
+    areYouSure: "Are you sure?",
+    confirmReset: "Yes, Delete Everything",
+    resetSuccess: "All data has been reset successfully.",
   },
   ar: {
     navigation: "التنقل",
@@ -491,6 +496,11 @@ export const translations = {
     scanAnother: "مسح فاتورة أخرى",
     transactionDetails: "تفاصيل المعاملة",
     createdAt: "تاريخ الإنشاء",
+    resetAllData: "إعادة تعيين جميع البيانات",
+    resetWarning: "سيؤدي هذا إلى حذف جميع المعاملات والاستثمارات والإقراضات والميزانيات وأهداف الادخار نهائياً. لا يمكن التراجع عن هذا الإجراء.",
+    areYouSure: "هل أنت متأكد؟",
+    confirmReset: "نعم، احذف كل شيء",
+    resetSuccess: "تم إعادة تعيين جميع البيانات بنجاح.",
   }
 } as const;
 
