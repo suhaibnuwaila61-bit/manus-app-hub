@@ -163,10 +163,10 @@ export default function Transactions() {
             ) : (
               <div className="space-y-3">
                 {scannedTx.map((tx, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-background/50 border border-border/50">
+                  <div key={i} className="p-3 rounded-lg bg-background/50 border border-border/50 space-y-2">
                     <div className="min-w-0">
                       <p className="text-sm font-medium truncate">{tx.description}</p>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                         <span className={tx.type === "income" ? "text-success" : "text-destructive"}>
                           {tx.type === "income" ? "+" : "-"}{fmt(tx.amount)}
                         </span>
@@ -176,7 +176,7 @@ export default function Transactions() {
                         <span>{tx.transaction_date}</span>
                       </div>
                     </div>
-                    <Button size="sm" className="glow-button ms-3 shrink-0" onClick={() => addScannedTransaction(tx, i)}>
+                    <Button size="sm" className="glow-button w-full" onClick={() => addScannedTransaction(tx, i)}>
                       <Check className="h-3.5 w-3.5 me-1" /> {t("confirmAdd")}
                     </Button>
                   </div>
