@@ -229,7 +229,7 @@ export default function Transactions() {
           ) : (
             <div className="divide-y divide-border/50">
               {[...transactions].sort((a: any, b: any) => new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime()).map((tx: any) => (
-                <div key={tx.id} className="list-item">
+                <div key={tx.id} className="list-item cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => setSelectedTx(tx)}>
                   <div className="flex items-center gap-3 min-w-0">
                     <div className={`h-9 w-9 rounded-lg flex items-center justify-center shrink-0 ${tx.type === "income" ? "bg-success/10" : "bg-destructive/10"}`}>
                       {tx.type === "income" ? <TrendingUp className="h-4 w-4 text-success" /> : <TrendingDown className="h-4 w-4 text-destructive" />}
@@ -247,7 +247,7 @@ export default function Transactions() {
                     <span className={`text-sm font-display font-semibold ${tx.type === "income" ? "text-success" : "text-destructive"}`}>
                       {tx.type === "income" ? "+" : "-"}{fmt(Number(tx.amount))}
                     </span>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive transition-colors" onClick={async () => { await remove(tx.id); toast.success(t("transactionDeletedSuccessfully")); }}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive transition-colors" onClick={async (e) => { e.stopPropagation(); await remove(tx.id); toast.success(t("transactionDeletedSuccessfully")); }}>
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
