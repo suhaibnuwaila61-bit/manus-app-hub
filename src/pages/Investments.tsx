@@ -22,6 +22,7 @@ export default function Investments() {
   const [form, setForm] = useState({ symbol: "", asset_type: "stock", quantity: "", purchase_price: "", current_price: "", name: "", sector: "other", purchase_date: new Date(), notes: "" });
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [sellForm, setSellForm] = useState<{ id: string; quantity: string; price: string; fees: string } | null>(null);
+  const [buyMoreForm, setBuyMoreForm] = useState<{ id: string; quantity: string; price: string; fees: string } | null>(null);
 
   // Calculator state
   const [roiCalc, setRoiCalc] = useState({ buyPrice: "", sellPrice: "", quantity: "", fees: "" });
@@ -102,6 +103,30 @@ export default function Investments() {
     }
     toast.success(t("sellInvestment"));
     setSellForm(null);
+  };
+
+  const handleBuyMore = async () => {
+    if (!buyMoreForm) return;
+    const inv = investments.find((i: any) => i.id === buyMoreForm.id);
+    if (!inv) return;
+    const qty = parseFloat(buyMoreForm.quantity);
+    const price = parseFloat(buyMoreForm.price);
+    const fees = parseFloat(buyMoreForm.fees || "0");
+    if (!qty || !price) { toast.error(t("pleaseFillAllFields")); return; }
+
+    await createTxn({
+      investment_id: inv.id, action: "buy", quantity: qty, price_per_unit: price,
+      total_amount: qty * price, fees, notes: "", transaction_date: new Date().toISOString()
+    });
+
+    // Update investment: average purchase price and add quantity
+    const oldQty = Number(inv.quantity);
+    const oldPrice = Number(inv.purchase_price);
+    const newQty = oldQty + qty;
+    const avgPrice = (oldQty * oldPrice + qty * price) / newQty;
+    await update(inv.id, { quantity: newQty, purchase_price: avgPrice });
+    toast.success(t("investmentAdded"));
+    setBuyMoreForm(null);
   };
 
   // ROI calculation
@@ -215,6 +240,25 @@ export default function Investments() {
           </div>
         )}
 
+        {/* Buy More Form Modal */}
+        {buyMoreForm && (
+          <div className="glass-card animate-slide-up" style={{ borderColor: "hsl(var(--success, 142 76% 36%) / 0.3)" }}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-display font-semibold text-success">{t("buy")} — {investments.find((i: any) => i.id === buyMoreForm.id)?.symbol}</h3>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setBuyMoreForm(null)}><X className="h-4 w-4" /></Button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <input type="number" step="0.01" placeholder={t("quantity")} value={buyMoreForm.quantity} onChange={e => setBuyMoreForm({...buyMoreForm, quantity: e.target.value})} className="input-field" />
+              <input type="number" step="0.01" placeholder={t("buyPrice")} value={buyMoreForm.price} onChange={e => setBuyMoreForm({...buyMoreForm, price: e.target.value})} className="input-field" />
+              <input type="number" step="0.01" placeholder={t("fees")} value={buyMoreForm.fees} onChange={e => setBuyMoreForm({...buyMoreForm, fees: e.target.value})} className="input-field" />
+            </div>
+            <div className="flex gap-2 mt-3">
+              <Button size="sm" className="flex-1 bg-success hover:bg-success/90" onClick={handleBuyMore}>{t("buy")}</Button>
+              <Button size="sm" variant="outline" className="flex-1" onClick={() => setBuyMoreForm(null)}>{t("cancel")}</Button>
+            </div>
+          </div>
+        )}
+
         {/* Tabs */}
         <Tabs defaultValue="portfolio" className="w-full">
           <TabsList className="w-full grid grid-cols-3 bg-muted/50 backdrop-blur-sm">
@@ -298,15 +342,18 @@ export default function Investments() {
                               {inv.purchase_date && ` · ${format(new Date(inv.purchase_date), "MMM d, yyyy")}`}
                             </p>
                           </div>
-                          <div className="flex items-center gap-3 shrink-0 ms-3">
-                            <div className="text-end">
+                          <div className="flex items-center gap-2 shrink-0 ms-3">
+                            <div className="text-end me-1">
                               <p className="text-sm font-display font-semibold">{fmt(value)}</p>
                               <p className={`text-xs ${gain >= 0 ? "text-success" : "text-destructive"}`}>{gain >= 0 ? "+" : ""}{fmt(gain)} ({pct.toFixed(1)}%)</p>
                             </div>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-warning" onClick={(e) => { e.stopPropagation(); setSellForm({ id: inv.id, quantity: "", price: "", fees: "" }); }}>
-                              <TrendingDown className="h-3.5 w-3.5" />
+                            <Button size="sm" variant="outline" className="h-7 text-xs px-2 border-success/30 text-success hover:bg-success/10" onClick={(e) => { e.stopPropagation(); setBuyMoreForm({ id: inv.id, quantity: "", price: "", fees: "" }); }}>
+                              <TrendingUp className="h-3 w-3 me-1" />{t("buy")}
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={async (e) => { e.stopPropagation(); await remove(inv.id); toast.success(t("investmentDeletedSuccessfully")); }}>
+                            <Button size="sm" variant="outline" className="h-7 text-xs px-2 border-destructive/30 text-destructive hover:bg-destructive/10" onClick={(e) => { e.stopPropagation(); setSellForm({ id: inv.id, quantity: "", price: "", fees: "" }); }}>
+                              <TrendingDown className="h-3 w-3 me-1" />{t("sell")}
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={async (e) => { e.stopPropagation(); await remove(inv.id); toast.success(t("investmentDeletedSuccessfully")); }}>
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                             {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
