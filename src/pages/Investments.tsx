@@ -174,12 +174,13 @@ export default function Investments() {
           <div className="stat-card"><span className="text-xs text-muted-foreground">{t("assets")}</span><p className="text-lg font-display font-bold">{investments.length}</p></div>
         </div>
 
-        {/* Add Form Dialog */}
-        <Dialog open={showForm} onOpenChange={setShowForm}>
-          <DialogContent className="sm:max-w-[600px] border-border/50 bg-card/95 backdrop-blur-xl">
-            <DialogHeader>
-              <DialogTitle className="font-display">{t("addInvestment")}</DialogTitle>
-            </DialogHeader>
+        {/* Add Form Inline */}
+        {showForm && (
+          <div className="glass-card animate-slide-up" style={{ borderColor: "hsl(var(--primary) / 0.3)" }}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-display font-semibold">{t("addInvestment")}</h3>
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-primary/10" onClick={() => setShowForm(false)}><X className="h-4 w-4" /></Button>
+            </div>
             <form onSubmit={handleAdd} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <input type="text" placeholder={t("symbol")} value={form.symbol} onChange={e => setForm({...form, symbol: e.target.value})} className="input-field" />
               <input type="text" placeholder={t("name")} value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="input-field" />
@@ -218,8 +219,8 @@ export default function Investments() {
                 <Button type="button" variant="outline" size="sm" className="flex-1" onClick={() => setShowForm(false)}>{t("cancel")}</Button>
               </div>
             </form>
-          </DialogContent>
-        </Dialog>
+          </div>
+        )}
 
         {/* Sell Form Dialog */}
         <Dialog open={!!sellForm} onOpenChange={(open) => !open && setSellForm(null)}>
