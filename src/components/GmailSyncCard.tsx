@@ -64,12 +64,16 @@ export default function GmailSyncCard() {
   const handleSync = async () => {
     setSyncing(true);
     try {
-      const { data, error } = await supabase.functions.invoke("sync-gmail-transactions");
+      // Send fullScan + resetFilters so the function looks at the last 30 days
+      // across ALL banks (clearing any stale per-bank filter saved earlier).
+      const { data, error } = await supabase.functions.invoke("sync-gmail-transactions", {
+        body: { fullScan: true, resetFilters: true },
+      });
       if (error || (data && data.error)) {
         toast.error(error?.message || data?.error || "Sync failed");
       } else {
         toast.success(
-          `${t("syncComplete") || "Sync complete"}: ${data.created} ${t("imported") || "imported"}, ${data.skipped} ${t("skipped") || "skipped"}`
+          `${t("syncComplete") || "Sync complete"}: ${data.created} ${t("imported") || "imported"}, ${data.skipped} ${t("skipped") || "skipped"} (${data.scanned} scanned)`
         );
         loadStatus();
       }
