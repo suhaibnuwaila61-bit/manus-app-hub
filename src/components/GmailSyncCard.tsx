@@ -72,8 +72,19 @@ export default function GmailSyncCard() {
       if (error || (data && data.error)) {
         toast.error(error?.message || data?.error || "Sync failed");
       } else {
+        // Log the per-email skip reasons so you can see exactly what got filtered out.
+        if (data?.skipLog) {
+          console.group("📧 Gmail sync — skipped emails");
+          console.table(data.skipLog);
+          console.log("Skip reason summary:", data.reasonCounts);
+          console.groupEnd();
+        }
+        const summary = data.reasonCounts
+          ? " — " + Object.entries(data.reasonCounts).map(([k, v]) => `${v} ${k}`).join(", ")
+          : "";
         toast.success(
-          `${t("syncComplete") || "Sync complete"}: ${data.created} ${t("imported") || "imported"}, ${data.skipped} ${t("skipped") || "skipped"} (${data.scanned} scanned)${data.deferred ? ` — ${data.deferred} more pending, click Sync again` : ""}`
+          `Imported ${data.created}, skipped ${data.skipped} of ${data.scanned} scanned${data.deferred ? ` (${data.deferred} more pending)` : ""}${summary}. Check console for details.`,
+          { duration: 8000 }
         );
         loadStatus();
       }

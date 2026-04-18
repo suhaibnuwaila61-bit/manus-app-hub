@@ -58,16 +58,17 @@ function extractEmailBody(payload: any): string {
 
 async function parseEmailWithAI(subject: string, body: string) {
   const apiKey = Deno.env.get("LOVABLE_API_KEY")!;
-  const prompt = `You are a transaction extractor for bank email alerts from ANY bank worldwide.
-Extract the transaction details from the email below. Reply with ONLY a JSON object in this exact format:
+  const prompt = `You extract transaction data from bank/payment emails. Be GENEROUS — when in doubt, treat it AS a transaction.
+Reply with ONLY a JSON object:
 {"is_transaction": true|false, "amount": number, "currency": "AED", "type": "expense"|"income", "merchant": "string", "date_iso": "YYYY-MM-DD", "category": "string"}
 
 Rules:
-- If this is NOT a transaction notification (e.g., promo, statement, OTP, marketing), set is_transaction=false and leave other fields null.
-- Apple Pay / Google Pay / card purchases / POS / online purchase / debit = "expense".
-- Salary, refund, transfer-in, deposit, credit = "income".
-- category should be one of: Food, Shopping, Transport, Bills, Entertainment, Health, Travel, Groceries, Other.
-- amount is the numeric value only (no currency symbol). Use the email's currency (default AED).
+- IS a transaction (is_transaction=true): card purchase, Apple Pay, Google Pay, POS, online purchase, debit, credit, salary, deposit, refund, transfer in/out, ATM withdrawal, bill payment, fund transfer, mobile recharge, subscription charge, account credited, account debited, money sent, money received, payment received, payment sent.
+- NOT a transaction (is_transaction=false): OTP codes, login alerts, password reset, statement available, marketing/promo, balance summary, card delivery, application status, KYC reminder.
+- expense = money LEAVING your account (purchase, debit, payment sent, withdrawal).
+- income = money ENTERING your account (salary, deposit, credit, refund, payment received).
+- category: Food, Shopping, Transport, Bills, Entertainment, Health, Travel, Groceries, Other.
+- amount = numeric value only. If amount is missing/zero, set is_transaction=false.
 
 Subject: ${subject}
 Body: ${body.slice(0, 3000)}`;
@@ -186,12 +187,18 @@ Deno.serve(async (req) => {
     if (!fullScan && cfg.email_filters && cfg.email_filters.length > 0) {
       filterClause = "(" + cfg.email_filters.map((f: string) => `from:${f}`).join(" OR ") + ")";
     } else {
+      // Very broad — match any email mentioning a transaction keyword OR coming from a known bank/payment domain.
       filterClause =
         "(transaction OR purchase OR debited OR credited OR payment OR spent OR " +
-        '"apple pay" OR "google pay" OR pos OR card OR ' +
-        "from:bank OR from:adcb.com OR from:liv.me OR from:emiratesnbd.com OR from:emiratesnbd.ae OR " +
-        "from:fab.ae OR from:mashreq.com OR from:hsbc OR from:citi OR from:rakbank OR " +
-        "from:dib.ae OR from:adib.ae)";
+        "withdrawn OR deposited OR transferred OR received OR sent OR charged OR " +
+        '"apple pay" OR "google pay" OR "samsung pay" OR pos OR card OR atm OR ' +
+        "salary OR refund OR invoice OR receipt OR " +
+        "from:bank OR from:adcb.com OR from:liv.me OR from:liv.ae OR " +
+        "from:emiratesnbd.com OR from:emiratesnbd.ae OR from:fab.ae OR " +
+        "from:mashreq.com OR from:mashreqbank.com OR from:hsbc OR from:citi OR " +
+        "from:rakbank OR from:dib.ae OR from:adib.ae OR from:cbd.ae OR " +
+        "from:noor.ae OR from:nbf.ae OR from:standardchartered OR " +
+        "from:paypal OR from:stripe OR from:wise.com OR from:revolut)";
     }
     const query = `${filterClause} after:${afterEpoch}`;
     console.log("Gmail query:", query, "fullScan:", fullScan);
@@ -249,7 +256,9 @@ Deno.serve(async (req) => {
     let skipped = alreadySkipped;
     const scanned = messages.length;
 
-    // Process in parallel chunks of 5 to keep wall-clock low.
+    // Track WHY each email was skipped, so we can debug what's being filtered.
+    const skipLog: { subject: string; from: string; reason: string }[] = [];
+
     const CHUNK = 10;
     for (let i = 0; i < batch.length; i += CHUNK) {
       const chunk = batch.slice(i, i + CHUNK);
@@ -259,14 +268,16 @@ Deno.serve(async (req) => {
             `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=full`,
             { headers: { Authorization: `Bearer ${accessToken}` } }
           );
-          if (!msgResp.ok) return { skipped: true };
+          if (!msgResp.ok) {
+            return { skipped: true, reason: `gmail-fetch-${msgResp.status}`, subject: "", from: "" };
+          }
           const msgData = await msgResp.json();
           const headers = msgData.payload?.headers ?? [];
           const subject = headers.find((h: any) => h.name.toLowerCase() === "subject")?.value ?? "";
           const dateHeader = headers.find((h: any) => h.name.toLowerCase() === "date")?.value;
           const fromHeader = headers.find((h: any) => h.name.toLowerCase() === "from")?.value ?? "";
           const body = extractEmailBody(msgData.payload);
-          if (!body) return { skipped: true };
+          if (!body) return { skipped: true, reason: "no-body", subject, from: fromHeader };
 
           const fromLower = fromHeader.toLowerCase();
           let bankName = "Bank";
@@ -286,7 +297,9 @@ Deno.serve(async (req) => {
           }
 
           const parsed = await parseEmailWithAI(subject, body);
-          if (!parsed || !parsed.is_transaction || !parsed.amount) return { skipped: true };
+          if (!parsed) return { skipped: true, reason: "ai-failed", subject, from: fromHeader };
+          if (!parsed.is_transaction) return { skipped: true, reason: "ai-says-not-transaction", subject, from: fromHeader };
+          if (!parsed.amount) return { skipped: true, reason: "no-amount", subject, from: fromHeader };
 
           const txDate = parsed.date_iso
             ? new Date(parsed.date_iso).toISOString()
@@ -294,10 +307,12 @@ Deno.serve(async (req) => {
               ? new Date(dateHeader).toISOString()
               : new Date().toISOString();
 
-          if (new Date(txDate) < thirtyDaysAgo) return { skipped: true };
+          if (new Date(txDate) < thirtyDaysAgo) {
+            return { skipped: true, reason: `too-old (${txDate.slice(0, 10)})`, subject, from: fromHeader };
+          }
 
           const noteTag = `[gmail:${msg.id}]`;
-          await admin.from("transactions").insert({
+          const { error: insertError } = await admin.from("transactions").insert({
             user_id: user.id,
             amount: Number(parsed.amount),
             type: parsed.type === "income" ? "income" : "expense",
@@ -306,17 +321,39 @@ Deno.serve(async (req) => {
             transaction_date: txDate,
             notes: `Bank: ${bankName} • Auto-imported from Gmail ${noteTag}`,
           });
+          if (insertError) {
+            return { skipped: true, reason: `db-insert-error: ${insertError.message}`, subject, from: fromHeader };
+          }
           return { created: true };
         } catch (e) {
           console.error("msg processing error:", e);
-          return { skipped: true };
+          return { skipped: true, reason: `exception: ${String(e).slice(0, 80)}`, subject: "", from: "" };
         }
       }));
       for (const r of results) {
-        if (r.created) created++;
-        else skipped++;
+        if (r.created) {
+          created++;
+        } else {
+          skipped++;
+          if (skipLog.length < 30) {
+            skipLog.push({
+              subject: (r.subject || "").slice(0, 100),
+              from: (r.from || "").slice(0, 80),
+              reason: r.reason || "unknown",
+            });
+          }
+        }
       }
     }
+
+    // Log a summary of skip reasons so the user can see what got rejected.
+    console.log("Skip log (first 30):", JSON.stringify(skipLog, null, 2));
+    const reasonCounts: Record<string, number> = {};
+    for (const s of skipLog) {
+      const key = s.reason.split(" ")[0].split(":")[0];
+      reasonCounts[key] = (reasonCounts[key] ?? 0) + 1;
+    }
+    console.log("Skip reason summary:", reasonCounts);
 
     await admin
       .from("gmail_sync_config")
@@ -327,7 +364,7 @@ Deno.serve(async (req) => {
       .eq("id", cfg.id);
 
     return new Response(
-      JSON.stringify({ success: true, scanned, created, skipped, deferred }),
+      JSON.stringify({ success: true, scanned, created, skipped, deferred, skipLog, reasonCounts }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
