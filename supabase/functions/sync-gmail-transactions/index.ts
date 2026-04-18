@@ -158,18 +158,23 @@ Deno.serve(async (req) => {
         .eq("id", cfg.id);
     }
 
-    // Build Gmail search query — last 30 days on first sync, otherwise since last sync
-    const sinceDate = cfg.last_sync_at
+    // If user requested resetFilters, clear the saved filter list now.
+    if (resetFilters && cfg.email_filters && cfg.email_filters.length > 0) {
+      await admin.from("gmail_sync_config").update({ email_filters: [] }).eq("id", cfg.id);
+      cfg.email_filters = [];
+    }
+
+    // Build Gmail search window. fullScan ignores last_sync_at and looks at last 30 days.
+    const sinceDate = !fullScan && cfg.last_sync_at
       ? new Date(cfg.last_sync_at)
       : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const afterEpoch = Math.floor(sinceDate.getTime() / 1000);
 
     // Match transaction emails from ANY bank. Users can override with custom email_filters.
     let filterClause: string;
-    if (cfg.email_filters && cfg.email_filters.length > 0) {
+    if (!fullScan && cfg.email_filters && cfg.email_filters.length > 0) {
       filterClause = "(" + cfg.email_filters.map((f: string) => `from:${f}`).join(" OR ") + ")";
     } else {
-      // Broad: match by keyword OR by common bank sender hints. Unquoted = OR-of-words in Gmail.
       filterClause =
         "(transaction OR purchase OR debited OR credited OR payment OR spent OR " +
         '"apple pay" OR "google pay" OR pos OR card OR ' +
@@ -178,7 +183,7 @@ Deno.serve(async (req) => {
         "from:dib.ae OR from:adib.ae)";
     }
     const query = `${filterClause} after:${afterEpoch}`;
-    console.log("Gmail query:", query);
+    console.log("Gmail query:", query, "fullScan:", fullScan);
 
     const listResp = await fetch(
       `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(query)}&maxResults=50`,
