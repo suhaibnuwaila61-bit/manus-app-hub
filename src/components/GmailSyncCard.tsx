@@ -73,7 +73,7 @@ export default function GmailSyncCard() {
         toast.error(error?.message || data?.error || "Sync failed");
       } else {
         toast.success(
-          `${t("syncComplete") || "Sync complete"}: ${data.created} ${t("imported") || "imported"}, ${data.skipped} ${t("skipped") || "skipped"} (${data.scanned} scanned)`
+          `${t("syncComplete") || "Sync complete"}: ${data.created} ${t("imported") || "imported"}, ${data.skipped} ${t("skipped") || "skipped"} (${data.scanned} scanned)${data.deferred ? ` — ${data.deferred} more pending, click Sync again` : ""}`
         );
         loadStatus();
       }
