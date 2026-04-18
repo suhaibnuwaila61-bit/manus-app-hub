@@ -96,6 +96,18 @@ Body: ${body.slice(0, 3000)}`;
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  // Optional flags from query string OR request body
+  const url = new URL(req.url);
+  let fullScan = url.searchParams.get("fullScan") === "1";
+  let resetFilters = url.searchParams.get("resetFilters") === "1";
+  if (req.method === "POST") {
+    try {
+      const body = await req.clone().json();
+      if (body?.fullScan) fullScan = true;
+      if (body?.resetFilters) resetFilters = true;
+    } catch { /* no body */ }
+  }
+
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
