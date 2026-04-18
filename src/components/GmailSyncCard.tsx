@@ -89,7 +89,7 @@ export default function GmailSyncCard() {
         <div className="flex-1">
           <span className="font-display font-semibold">{t("gmailSync") || "Gmail Auto-Sync"}</span>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {t("gmailSyncDesc") || "Auto-import ADCB transactions from your inbox"}
+            {t("gmailSyncDesc") || "Auto-import bank transactions (ADCB, Liv, ENBD) from your inbox"}
           </p>
         </div>
         {connected && (
