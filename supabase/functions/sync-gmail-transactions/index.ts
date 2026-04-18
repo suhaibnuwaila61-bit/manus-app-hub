@@ -290,14 +290,20 @@ Deno.serve(async (req) => {
           ? new Date(dateHeader).toISOString()
           : new Date().toISOString();
 
+      // Skip transactions older than 30 days — user only wants recent ones.
+      if (new Date(txDate) < thirtyDaysAgo) {
+        skipped++;
+        continue;
+      }
+
       await admin.from("transactions").insert({
         user_id: user.id,
         amount: Number(parsed.amount),
         type: parsed.type === "income" ? "income" : "expense",
-        description: parsed.merchant || subject || "ADCB transaction",
+        description: parsed.merchant || subject || `${bankName} transaction`,
         category: parsed.category || "Other",
         transaction_date: txDate,
-        notes: `Auto-imported from Gmail ${noteTag}`,
+        notes: `Bank: ${bankName} • Auto-imported from Gmail ${noteTag}`,
       });
       created++;
     }
