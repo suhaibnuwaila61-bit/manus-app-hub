@@ -151,10 +151,16 @@ Deno.serve(async (req) => {
       ? new Date(cfg.last_sync_at)
       : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const afterEpoch = Math.floor(sinceDate.getTime() / 1000);
-    const filterClause =
-      cfg.email_filters && cfg.email_filters.length > 0
-        ? "(" + cfg.email_filters.map((f: string) => `from:${f}`).join(" OR ") + ")"
-        : "from:adcb.com";
+    // Default banks: ADCB + Liv (Emirates NBD). Users can override via email_filters.
+    const defaultSenders = [
+      "adcb.com",
+      "liv.me",
+      "emiratesnbd.com",
+      "emiratesnbd.ae",
+    ];
+    const senders =
+      cfg.email_filters && cfg.email_filters.length > 0 ? cfg.email_filters : defaultSenders;
+    const filterClause = "(" + senders.map((f: string) => `from:${f}`).join(" OR ") + ")";
     const query = `${filterClause} after:${afterEpoch}`;
 
     const listResp = await fetch(
