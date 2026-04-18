@@ -196,14 +196,14 @@ Deno.serve(async (req) => {
     const query = `${filterClause} after:${afterEpoch}`;
     console.log("Gmail query:", query, "fullScan:", fullScan);
 
-    // Paginate Gmail list so we don't miss messages beyond the first page.
+    // Paginate Gmail list (cap low so the function fits in 150s).
     const messages: { id: string }[] = [];
     let pageToken: string | undefined = undefined;
-    const MAX_MESSAGES = 200;
+    const MAX_MESSAGES = 60;
     do {
       const pageUrl = new URL("https://gmail.googleapis.com/gmail/v1/users/me/messages");
       pageUrl.searchParams.set("q", query);
-      pageUrl.searchParams.set("maxResults", "100");
+      pageUrl.searchParams.set("maxResults", "60");
       if (pageToken) pageUrl.searchParams.set("pageToken", pageToken);
       const listResp = await fetch(pageUrl.toString(), {
         headers: { Authorization: `Bearer ${accessToken}` },
@@ -217,95 +217,105 @@ Deno.serve(async (req) => {
         });
       }
       const listData = await listResp.json();
-      const batch = listData.messages ?? [];
-      messages.push(...batch);
+      const batch0 = listData.messages ?? [];
+      messages.push(...batch0);
       pageToken = listData.nextPageToken;
       if (messages.length >= MAX_MESSAGES) break;
     } while (pageToken);
-    console.log(`Gmail returned ${messages.length} messages (paginated) for query`);
+    console.log(`Gmail returned ${messages.length} messages`);
+
+    // Pre-fetch already-imported gmail message ids in ONE query (avoids N round-trips per message).
+    const { data: existingRows } = await admin
+      .from("transactions")
+      .select("notes")
+      .eq("user_id", user.id)
+      .ilike("notes", "%[gmail:%");
+    const importedIds = new Set<string>();
+    for (const row of existingRows ?? []) {
+      const m = (row as any).notes?.match(/\[gmail:([^\]]+)\]/);
+      if (m) importedIds.add(m[1]);
+    }
+
+    // Filter out already-imported BEFORE doing any expensive AI work.
+    const toProcess = messages.filter((m) => !importedIds.has(m.id));
+    const alreadySkipped = messages.length - toProcess.length;
+
+    // Cap per-run processing so we never approach the 150s limit.
+    const PROCESS_LIMIT = 25;
+    const batch = toProcess.slice(0, PROCESS_LIMIT);
+    const deferred = toProcess.length - batch.length;
 
     let created = 0;
-    let scanned = 0;
-    let skipped = 0;
+    let skipped = alreadySkipped;
+    const scanned = messages.length;
 
-    for (const msg of messages) {
-      scanned++;
-      const msgResp = await fetch(
-        `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=full`,
-        { headers: { Authorization: `Bearer ${accessToken}` } }
-      );
-      if (!msgResp.ok) continue;
-      const msgData = await msgResp.json();
-      const headers = msgData.payload?.headers ?? [];
-      const subject = headers.find((h: any) => h.name.toLowerCase() === "subject")?.value ?? "";
-      const dateHeader = headers.find((h: any) => h.name.toLowerCase() === "date")?.value;
-      const fromHeader = headers.find((h: any) => h.name.toLowerCase() === "from")?.value ?? "";
-      const body = extractEmailBody(msgData.payload);
-      if (!body) {
-        skipped++;
-        continue;
+    // Process in parallel chunks of 5 to keep wall-clock low.
+    const CHUNK = 5;
+    for (let i = 0; i < batch.length; i += CHUNK) {
+      const chunk = batch.slice(i, i + CHUNK);
+      const results = await Promise.all(chunk.map(async (msg) => {
+        try {
+          const msgResp = await fetch(
+            `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=full`,
+            { headers: { Authorization: `Bearer ${accessToken}` } }
+          );
+          if (!msgResp.ok) return { skipped: true };
+          const msgData = await msgResp.json();
+          const headers = msgData.payload?.headers ?? [];
+          const subject = headers.find((h: any) => h.name.toLowerCase() === "subject")?.value ?? "";
+          const dateHeader = headers.find((h: any) => h.name.toLowerCase() === "date")?.value;
+          const fromHeader = headers.find((h: any) => h.name.toLowerCase() === "from")?.value ?? "";
+          const body = extractEmailBody(msgData.payload);
+          if (!body) return { skipped: true };
+
+          const fromLower = fromHeader.toLowerCase();
+          let bankName = "Bank";
+          if (fromLower.includes("adcb")) bankName = "ADCB";
+          else if (fromLower.includes("liv.me") || fromLower.includes("liv.ae")) bankName = "Liv";
+          else if (fromLower.includes("emiratesnbd")) bankName = "Emirates NBD";
+          else if (fromLower.includes("fab.ae")) bankName = "FAB";
+          else if (fromLower.includes("mashreq")) bankName = "Mashreq";
+          else if (fromLower.includes("hsbc")) bankName = "HSBC";
+          else if (fromLower.includes("citi")) bankName = "Citi";
+          else if (fromLower.includes("rakbank")) bankName = "RAKBANK";
+          else if (fromLower.includes("dib.ae")) bankName = "DIB";
+          else if (fromLower.includes("adib")) bankName = "ADIB";
+          else {
+            const m = fromLower.match(/@([a-z0-9.-]+)/);
+            if (m) bankName = m[1].split(".")[0].toUpperCase();
+          }
+
+          const parsed = await parseEmailWithAI(subject, body);
+          if (!parsed || !parsed.is_transaction || !parsed.amount) return { skipped: true };
+
+          const txDate = parsed.date_iso
+            ? new Date(parsed.date_iso).toISOString()
+            : dateHeader
+              ? new Date(dateHeader).toISOString()
+              : new Date().toISOString();
+
+          if (new Date(txDate) < thirtyDaysAgo) return { skipped: true };
+
+          const noteTag = `[gmail:${msg.id}]`;
+          await admin.from("transactions").insert({
+            user_id: user.id,
+            amount: Number(parsed.amount),
+            type: parsed.type === "income" ? "income" : "expense",
+            description: parsed.merchant || subject || `${bankName} transaction`,
+            category: parsed.category || "Other",
+            transaction_date: txDate,
+            notes: `Bank: ${bankName} • Auto-imported from Gmail ${noteTag}`,
+          });
+          return { created: true };
+        } catch (e) {
+          console.error("msg processing error:", e);
+          return { skipped: true };
+        }
+      }));
+      for (const r of results) {
+        if (r.created) created++;
+        else skipped++;
       }
-
-      // Identify which bank this email came from (based on sender domain).
-      const fromLower = fromHeader.toLowerCase();
-      let bankName = "Bank";
-      if (fromLower.includes("adcb")) bankName = "ADCB";
-      else if (fromLower.includes("liv.me") || fromLower.includes("liv.ae")) bankName = "Liv";
-      else if (fromLower.includes("emiratesnbd")) bankName = "Emirates NBD";
-      else if (fromLower.includes("fab.ae")) bankName = "FAB";
-      else if (fromLower.includes("mashreq")) bankName = "Mashreq";
-      else if (fromLower.includes("hsbc")) bankName = "HSBC";
-      else if (fromLower.includes("citi")) bankName = "Citi";
-      else if (fromLower.includes("rakbank")) bankName = "RAKBANK";
-      else if (fromLower.includes("dib.ae")) bankName = "DIB";
-      else if (fromLower.includes("adib")) bankName = "ADIB";
-      else {
-        // Fallback: extract domain from "Name <user@domain.com>"
-        const m = fromLower.match(/@([a-z0-9.-]+)/);
-        if (m) bankName = m[1].split(".")[0].toUpperCase();
-      }
-
-      // Idempotency: check if we've already imported this gmail message id
-      const noteTag = `[gmail:${msg.id}]`;
-      const { data: existing } = await admin
-        .from("transactions")
-        .select("id")
-        .eq("user_id", user.id)
-        .ilike("notes", `%${noteTag}%`)
-        .maybeSingle();
-      if (existing) {
-        skipped++;
-        continue;
-      }
-
-      const parsed = await parseEmailWithAI(subject, body);
-      if (!parsed || !parsed.is_transaction || !parsed.amount) {
-        skipped++;
-        continue;
-      }
-
-      const txDate = parsed.date_iso
-        ? new Date(parsed.date_iso).toISOString()
-        : dateHeader
-          ? new Date(dateHeader).toISOString()
-          : new Date().toISOString();
-
-      // Skip transactions older than 30 days — user only wants recent ones.
-      if (new Date(txDate) < thirtyDaysAgo) {
-        skipped++;
-        continue;
-      }
-
-      await admin.from("transactions").insert({
-        user_id: user.id,
-        amount: Number(parsed.amount),
-        type: parsed.type === "income" ? "income" : "expense",
-        description: parsed.merchant || subject || `${bankName} transaction`,
-        category: parsed.category || "Other",
-        transaction_date: txDate,
-        notes: `Bank: ${bankName} • Auto-imported from Gmail ${noteTag}`,
-      });
-      created++;
     }
 
     await admin
