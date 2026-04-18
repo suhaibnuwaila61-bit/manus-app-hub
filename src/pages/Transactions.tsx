@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Plus, X, Trash2, TrendingUp, TrendingDown, Loader2, Camera, Upload, ScanLine, Check } from "lucide-react";
 import { useState, useRef } from "react";
 import { toast } from "sonner";
+import ReportExport from "@/components/ReportExport";
 
 export default function Transactions() {
   const { t } = useLanguage();
@@ -114,7 +115,8 @@ export default function Transactions() {
             <h1 className="text-2xl font-display font-bold">{t("transactionHistory")}</h1>
             <p className="text-sm text-muted-foreground mt-1">{t("trackAllTransactions")}</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <ReportExport transactions={transactions} />
             <Button onClick={() => { setShowScan(true); setScannedTx([]); }} size="sm" variant="outline" className="border-primary/30 hover:bg-primary/10 transition-all duration-300">
               <ScanLine className="h-4 w-4 me-1" /> {t("scanReceipt")}
             </Button>
