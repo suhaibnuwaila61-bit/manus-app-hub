@@ -270,7 +270,6 @@ export const translations = {
     // Reports
     exportReport: "Export Report",
     financialReport: "Financial Report",
-    period: "Period",
     thisWeek: "This Week",
     thisMonth: "This Month",
     byCategory: "By Category",
@@ -544,7 +543,6 @@ export const translations = {
     // Reports
     exportReport: "تصدير التقرير",
     financialReport: "التقرير المالي",
-    period: "الفترة",
     thisWeek: "هذا الأسبوع",
     thisMonth: "هذا الشهر",
     byCategory: "حسب الفئة",
