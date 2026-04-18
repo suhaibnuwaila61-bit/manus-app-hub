@@ -164,10 +164,21 @@ Deno.serve(async (req) => {
       cfg.email_filters = [];
     }
 
-    // Build Gmail search window. fullScan ignores last_sync_at and looks at last 30 days.
-    const sinceDate = !fullScan && cfg.last_sync_at
-      ? new Date(cfg.last_sync_at)
-      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    // Build Gmail search window.
+    // - Normal sync: from last_sync_at (only NEW emails since last run).
+    // - fullScan: last 30 days only (user explicitly does NOT want old transactions).
+    const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+    const thirtyDaysAgo = new Date(Date.now() - THIRTY_DAYS_MS);
+    let sinceDate: Date;
+    if (fullScan) {
+      sinceDate = thirtyDaysAgo;
+    } else if (cfg.last_sync_at) {
+      // Use the more recent of last_sync_at vs 30 days ago — never look further back than 30 days.
+      const last = new Date(cfg.last_sync_at);
+      sinceDate = last > thirtyDaysAgo ? last : thirtyDaysAgo;
+    } else {
+      sinceDate = thirtyDaysAgo;
+    }
     const afterEpoch = Math.floor(sinceDate.getTime() / 1000);
 
     // Match transaction emails from ANY bank. Users can override with custom email_filters.
@@ -185,21 +196,33 @@ Deno.serve(async (req) => {
     const query = `${filterClause} after:${afterEpoch}`;
     console.log("Gmail query:", query, "fullScan:", fullScan);
 
-    const listResp = await fetch(
-      `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(query)}&maxResults=50`,
-      { headers: { Authorization: `Bearer ${accessToken}` } }
-    );
-    if (!listResp.ok) {
-      const errText = await listResp.text();
-      console.error("Gmail list failed:", errText);
-      return new Response(JSON.stringify({ error: "Gmail API failed", details: errText }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+    // Paginate Gmail list so we don't miss messages beyond the first page.
+    const messages: { id: string }[] = [];
+    let pageToken: string | undefined = undefined;
+    const MAX_MESSAGES = 200;
+    do {
+      const pageUrl = new URL("https://gmail.googleapis.com/gmail/v1/users/me/messages");
+      pageUrl.searchParams.set("q", query);
+      pageUrl.searchParams.set("maxResults", "100");
+      if (pageToken) pageUrl.searchParams.set("pageToken", pageToken);
+      const listResp = await fetch(pageUrl.toString(), {
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
-    }
-    const listData = await listResp.json();
-    const messages = listData.messages ?? [];
-    console.log(`Gmail returned ${messages.length} messages for query`);
+      if (!listResp.ok) {
+        const errText = await listResp.text();
+        console.error("Gmail list failed:", errText);
+        return new Response(JSON.stringify({ error: "Gmail API failed", details: errText }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const listData = await listResp.json();
+      const batch = listData.messages ?? [];
+      messages.push(...batch);
+      pageToken = listData.nextPageToken;
+      if (messages.length >= MAX_MESSAGES) break;
+    } while (pageToken);
+    console.log(`Gmail returned ${messages.length} messages (paginated) for query`);
 
     let created = 0;
     let scanned = 0;
@@ -216,10 +239,30 @@ Deno.serve(async (req) => {
       const headers = msgData.payload?.headers ?? [];
       const subject = headers.find((h: any) => h.name.toLowerCase() === "subject")?.value ?? "";
       const dateHeader = headers.find((h: any) => h.name.toLowerCase() === "date")?.value;
+      const fromHeader = headers.find((h: any) => h.name.toLowerCase() === "from")?.value ?? "";
       const body = extractEmailBody(msgData.payload);
       if (!body) {
         skipped++;
         continue;
+      }
+
+      // Identify which bank this email came from (based on sender domain).
+      const fromLower = fromHeader.toLowerCase();
+      let bankName = "Bank";
+      if (fromLower.includes("adcb")) bankName = "ADCB";
+      else if (fromLower.includes("liv.me") || fromLower.includes("liv.ae")) bankName = "Liv";
+      else if (fromLower.includes("emiratesnbd")) bankName = "Emirates NBD";
+      else if (fromLower.includes("fab.ae")) bankName = "FAB";
+      else if (fromLower.includes("mashreq")) bankName = "Mashreq";
+      else if (fromLower.includes("hsbc")) bankName = "HSBC";
+      else if (fromLower.includes("citi")) bankName = "Citi";
+      else if (fromLower.includes("rakbank")) bankName = "RAKBANK";
+      else if (fromLower.includes("dib.ae")) bankName = "DIB";
+      else if (fromLower.includes("adib")) bankName = "ADIB";
+      else {
+        // Fallback: extract domain from "Name <user@domain.com>"
+        const m = fromLower.match(/@([a-z0-9.-]+)/);
+        if (m) bankName = m[1].split(".")[0].toUpperCase();
       }
 
       // Idempotency: check if we've already imported this gmail message id
