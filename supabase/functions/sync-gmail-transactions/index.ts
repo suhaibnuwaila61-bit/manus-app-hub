@@ -146,50 +146,27 @@ Deno.serve(async (req) => {
         .eq("id", cfg.id);
     }
 
-    // Build Gmail search query — ADCB transactions in last 7 days (or since last sync)
+    // Build Gmail search query — last 30 days on first sync, otherwise since last sync
     const sinceDate = cfg.last_sync_at
       ? new Date(cfg.last_sync_at)
-      : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const afterEpoch = Math.floor(sinceDate.getTime() / 1000);
-    // Match transaction emails from ANY bank. Users can override with custom email_filters (from: senders).
+
+    // Match transaction emails from ANY bank. Users can override with custom email_filters.
     let filterClause: string;
     if (cfg.email_filters && cfg.email_filters.length > 0) {
       filterClause = "(" + cfg.email_filters.map((f: string) => `from:${f}`).join(" OR ") + ")";
     } else {
-      const keywords = [
-        '"transaction alert"',
-        '"transaction notification"',
-        '"purchase alert"',
-        '"card transaction"',
-        '"debit alert"',
-        '"credit alert"',
-        '"payment received"',
-        '"you have spent"',
-        '"has been debited"',
-        '"has been credited"',
-        '"apple pay"',
-        '"google pay"',
-        '"pos purchase"',
-      ];
-      const senderHints = [
-        "bank",
-        "adcb.com",
-        "liv.me",
-        "emiratesnbd.com",
-        "emiratesnbd.ae",
-        "fab.ae",
-        "mashreq.com",
-        "hsbc",
-        "citi",
-        "rakbank",
-        "dib.ae",
-        "adib.ae",
-      ];
-      const kwClause = "(" + keywords.join(" OR ") + ")";
-      const fromClause = "(" + senderHints.map((s) => `from:${s}`).join(" OR ") + ")";
-      filterClause = `(${kwClause} OR ${fromClause})`;
+      // Broad: match by keyword OR by common bank sender hints. Unquoted = OR-of-words in Gmail.
+      filterClause =
+        "(transaction OR purchase OR debited OR credited OR payment OR spent OR " +
+        '"apple pay" OR "google pay" OR pos OR card OR ' +
+        "from:bank OR from:adcb.com OR from:liv.me OR from:emiratesnbd.com OR from:emiratesnbd.ae OR " +
+        "from:fab.ae OR from:mashreq.com OR from:hsbc OR from:citi OR from:rakbank OR " +
+        "from:dib.ae OR from:adib.ae)";
     }
     const query = `${filterClause} after:${afterEpoch}`;
+    console.log("Gmail query:", query);
 
     const listResp = await fetch(
       `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(query)}&maxResults=50`,
@@ -205,6 +182,7 @@ Deno.serve(async (req) => {
     }
     const listData = await listResp.json();
     const messages = listData.messages ?? [];
+    console.log(`Gmail returned ${messages.length} messages for query`);
 
     let created = 0;
     let scanned = 0;
