@@ -18,6 +18,7 @@ import Planning from "./pages/Planning";
 import Lendings from "./pages/Lendings";
 import AIAssistant from "./pages/AIAssistant";
 import Settings from "./pages/Settings";
+import GmailCallback from "./pages/GmailCallback";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import NotFound from "./pages/NotFound";
@@ -52,6 +53,7 @@ function AnimatedRoutes() {
         <Route path="/lendings" element={<ProtectedRoute><Lendings /></ProtectedRoute>} />
         <Route path="/ai-assistant" element={<ProtectedRoute><AIAssistant /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+        <Route path="/gmail-callback" element={<ProtectedRoute><GmailCallback /></ProtectedRoute>} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfService />} />
         <Route path="*" element={<NotFound />} />
