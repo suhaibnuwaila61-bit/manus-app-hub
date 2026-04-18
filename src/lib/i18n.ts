@@ -267,6 +267,18 @@ export const translations = {
     totalSyncs: "Total syncs",
     connected: "Connected",
     disconnect: "Disconnect",
+    // Reports
+    exportReport: "Export Report",
+    financialReport: "Financial Report",
+    period: "Period",
+    thisWeek: "This Week",
+    thisMonth: "This Month",
+    byCategory: "By Category",
+    downloadPDF: "Download PDF",
+    downloadCSV: "Download CSV",
+    reportDownloaded: "Report downloaded",
+    popupBlocked: "Please allow popups to download the PDF",
+    generatedOn: "Generated on",
   },
   ar: {
     navigation: "التنقل",
@@ -529,6 +541,18 @@ export const translations = {
     totalSyncs: "إجمالي المزامنات",
     connected: "متصل",
     disconnect: "فصل",
+    // Reports
+    exportReport: "تصدير التقرير",
+    financialReport: "التقرير المالي",
+    period: "الفترة",
+    thisWeek: "هذا الأسبوع",
+    thisMonth: "هذا الشهر",
+    byCategory: "حسب الفئة",
+    downloadPDF: "تنزيل PDF",
+    downloadCSV: "تنزيل CSV",
+    reportDownloaded: "تم تنزيل التقرير",
+    popupBlocked: "يرجى السماح بالنوافذ المنبثقة لتنزيل ملف PDF",
+    generatedOn: "تم الإنشاء في",
   }
 } as const;
 
