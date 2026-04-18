@@ -10,6 +10,7 @@ import { Globe, Moon, Sun, Coins, Check, LogOut, User, AlertTriangle } from "luc
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import GmailSyncCard from "@/components/GmailSyncCard";
 
 export default function Settings() {
   const { language, setLanguage, isArabic, isEnglish, t } = useLanguage();
@@ -129,6 +130,9 @@ export default function Settings() {
             ))}
           </div>
         </div>
+
+        {/* Gmail Auto-Sync */}
+        <GmailSyncCard />
 
         {/* Danger Zone - Reset */}
         <div className="glass-card border-destructive/30">

@@ -253,6 +253,20 @@ export const translations = {
     areYouSure: "Are you sure?",
     confirmReset: "Yes, Delete Everything",
     resetSuccess: "All data has been reset successfully.",
+    // Gmail Sync (additions)
+    gmailSyncDesc: "Auto-import ADCB transactions from your inbox",
+    connectingGmail: "Connecting Gmail…",
+    connectionFailed: "Connection failed",
+    backToSettings: "Back to Settings",
+    pleaseWait: "Please wait a moment.",
+    redirecting: "Redirecting…",
+    syncComplete: "Sync complete",
+    imported: "imported",
+    skipped: "skipped",
+    lastSync: "Last sync",
+    totalSyncs: "Total syncs",
+    connected: "Connected",
+    disconnect: "Disconnect",
   },
   ar: {
     navigation: "التنقل",
@@ -501,6 +515,20 @@ export const translations = {
     areYouSure: "هل أنت متأكد؟",
     confirmReset: "نعم، احذف كل شيء",
     resetSuccess: "تم إعادة تعيين جميع البيانات بنجاح.",
+    // Gmail Sync (additions)
+    gmailSyncDesc: "استيراد معاملات ADCB تلقائياً من بريدك الإلكتروني",
+    connectingGmail: "جارٍ ربط Gmail…",
+    connectionFailed: "فشل الاتصال",
+    backToSettings: "العودة إلى الإعدادات",
+    pleaseWait: "يرجى الانتظار لحظة.",
+    redirecting: "جارٍ التحويل…",
+    syncComplete: "اكتملت المزامنة",
+    imported: "تم الاستيراد",
+    skipped: "تم التخطي",
+    lastSync: "آخر مزامنة",
+    totalSyncs: "إجمالي المزامنات",
+    connected: "متصل",
+    disconnect: "فصل",
   }
 } as const;
 
