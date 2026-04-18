@@ -187,12 +187,18 @@ Deno.serve(async (req) => {
     if (!fullScan && cfg.email_filters && cfg.email_filters.length > 0) {
       filterClause = "(" + cfg.email_filters.map((f: string) => `from:${f}`).join(" OR ") + ")";
     } else {
+      // Very broad — match any email mentioning a transaction keyword OR coming from a known bank/payment domain.
       filterClause =
         "(transaction OR purchase OR debited OR credited OR payment OR spent OR " +
-        '"apple pay" OR "google pay" OR pos OR card OR ' +
-        "from:bank OR from:adcb.com OR from:liv.me OR from:emiratesnbd.com OR from:emiratesnbd.ae OR " +
-        "from:fab.ae OR from:mashreq.com OR from:hsbc OR from:citi OR from:rakbank OR " +
-        "from:dib.ae OR from:adib.ae)";
+        "withdrawn OR deposited OR transferred OR received OR sent OR charged OR " +
+        '"apple pay" OR "google pay" OR "samsung pay" OR pos OR card OR atm OR ' +
+        "salary OR refund OR invoice OR receipt OR " +
+        "from:bank OR from:adcb.com OR from:liv.me OR from:liv.ae OR " +
+        "from:emiratesnbd.com OR from:emiratesnbd.ae OR from:fab.ae OR " +
+        "from:mashreq.com OR from:mashreqbank.com OR from:hsbc OR from:citi OR " +
+        "from:rakbank OR from:dib.ae OR from:adib.ae OR from:cbd.ae OR " +
+        "from:noor.ae OR from:nbf.ae OR from:standardchartered OR " +
+        "from:paypal OR from:stripe OR from:wise.com OR from:revolut)";
     }
     const query = `${filterClause} after:${afterEpoch}`;
     console.log("Gmail query:", query, "fullScan:", fullScan);
