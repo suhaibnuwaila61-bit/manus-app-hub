@@ -58,16 +58,17 @@ function extractEmailBody(payload: any): string {
 
 async function parseEmailWithAI(subject: string, body: string) {
   const apiKey = Deno.env.get("LOVABLE_API_KEY")!;
-  const prompt = `You are a transaction extractor for bank email alerts from ANY bank worldwide.
-Extract the transaction details from the email below. Reply with ONLY a JSON object in this exact format:
+  const prompt = `You extract transaction data from bank/payment emails. Be GENEROUS — when in doubt, treat it AS a transaction.
+Reply with ONLY a JSON object:
 {"is_transaction": true|false, "amount": number, "currency": "AED", "type": "expense"|"income", "merchant": "string", "date_iso": "YYYY-MM-DD", "category": "string"}
 
 Rules:
-- If this is NOT a transaction notification (e.g., promo, statement, OTP, marketing), set is_transaction=false and leave other fields null.
-- Apple Pay / Google Pay / card purchases / POS / online purchase / debit = "expense".
-- Salary, refund, transfer-in, deposit, credit = "income".
-- category should be one of: Food, Shopping, Transport, Bills, Entertainment, Health, Travel, Groceries, Other.
-- amount is the numeric value only (no currency symbol). Use the email's currency (default AED).
+- IS a transaction (is_transaction=true): card purchase, Apple Pay, Google Pay, POS, online purchase, debit, credit, salary, deposit, refund, transfer in/out, ATM withdrawal, bill payment, fund transfer, mobile recharge, subscription charge, account credited, account debited, money sent, money received, payment received, payment sent.
+- NOT a transaction (is_transaction=false): OTP codes, login alerts, password reset, statement available, marketing/promo, balance summary, card delivery, application status, KYC reminder.
+- expense = money LEAVING your account (purchase, debit, payment sent, withdrawal).
+- income = money ENTERING your account (salary, deposit, credit, refund, payment received).
+- category: Food, Shopping, Transport, Bills, Entertainment, Health, Travel, Groceries, Other.
+- amount = numeric value only. If amount is missing/zero, set is_transaction=false.
 
 Subject: ${subject}
 Body: ${body.slice(0, 3000)}`;
