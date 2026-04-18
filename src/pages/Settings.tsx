@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import GmailSyncCard from "@/components/GmailSyncCard";
+import NotificationWebhookCard from "@/components/NotificationWebhookCard";
 
 export default function Settings() {
   const { language, setLanguage, isArabic, isEnglish, t } = useLanguage();
@@ -130,6 +131,9 @@ export default function Settings() {
             ))}
           </div>
         </div>
+
+        {/* Phone Notification Sync */}
+        <NotificationWebhookCard />
 
         {/* Gmail Auto-Sync */}
         <GmailSyncCard />

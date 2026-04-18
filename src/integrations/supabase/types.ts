@@ -244,6 +244,45 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_webhooks: {
+        Row: {
+          app_filter: string
+          created_at: string
+          id: string
+          is_active: boolean
+          last_received_at: string | null
+          token: string
+          total_imported: number
+          total_received: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          app_filter?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_received_at?: string | null
+          token: string
+          total_imported?: number
+          total_received?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          app_filter?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_received_at?: string | null
+          token?: string
+          total_imported?: number
+          total_received?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
