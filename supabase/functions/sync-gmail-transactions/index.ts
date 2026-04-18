@@ -199,11 +199,11 @@ Deno.serve(async (req) => {
     // Paginate Gmail list (cap low so the function fits in 150s).
     const messages: { id: string }[] = [];
     let pageToken: string | undefined = undefined;
-    const MAX_MESSAGES = 60;
+    const MAX_MESSAGES = 100;
     do {
       const pageUrl = new URL("https://gmail.googleapis.com/gmail/v1/users/me/messages");
       pageUrl.searchParams.set("q", query);
-      pageUrl.searchParams.set("maxResults", "60");
+      pageUrl.searchParams.set("maxResults", "100");
       if (pageToken) pageUrl.searchParams.set("pageToken", pageToken);
       const listResp = await fetch(pageUrl.toString(), {
         headers: { Authorization: `Bearer ${accessToken}` },
@@ -241,7 +241,7 @@ Deno.serve(async (req) => {
     const alreadySkipped = messages.length - toProcess.length;
 
     // Cap per-run processing so we never approach the 150s limit.
-    const PROCESS_LIMIT = 25;
+    const PROCESS_LIMIT = 100;
     const batch = toProcess.slice(0, PROCESS_LIMIT);
     const deferred = toProcess.length - batch.length;
 
@@ -250,7 +250,7 @@ Deno.serve(async (req) => {
     const scanned = messages.length;
 
     // Process in parallel chunks of 5 to keep wall-clock low.
-    const CHUNK = 5;
+    const CHUNK = 10;
     for (let i = 0; i < batch.length; i += CHUNK) {
       const chunk = batch.slice(i, i + CHUNK);
       const results = await Promise.all(chunk.map(async (msg) => {
