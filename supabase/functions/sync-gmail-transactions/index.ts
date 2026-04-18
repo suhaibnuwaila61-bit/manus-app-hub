@@ -327,7 +327,7 @@ Deno.serve(async (req) => {
       .eq("id", cfg.id);
 
     return new Response(
-      JSON.stringify({ success: true, scanned, created, skipped }),
+      JSON.stringify({ success: true, scanned, created, skipped, deferred }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
