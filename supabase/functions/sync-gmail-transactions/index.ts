@@ -58,7 +58,7 @@ function extractEmailBody(payload: any): string {
 
 async function parseEmailWithAI(subject: string, body: string) {
   const apiKey = Deno.env.get("LOVABLE_API_KEY")!;
-  const prompt = `You are a transaction extractor for UAE bank email alerts (ADCB, Liv, Emirates NBD, and similar).
+  const prompt = `You are a transaction extractor for bank email alerts from ANY bank worldwide.
 Extract the transaction details from the email below. Reply with ONLY a JSON object in this exact format:
 {"is_transaction": true|false, "amount": number, "currency": "AED", "type": "expense"|"income", "merchant": "string", "date_iso": "YYYY-MM-DD", "category": "string"}
 
