@@ -16,6 +16,7 @@ export default function Transactions() {
   const { data: transactions, loading, create, update, remove } = useSupabaseTable<any>("transactions");
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({ amount: "", description: "", type: "expense" as "income" | "expense", category: "General" });
+  const [filter, setFilter] = useState<"all" | "income" | "expense">("all");
 
   // Scan state
   const [showScan, setShowScan] = useState(false);
@@ -127,9 +128,30 @@ export default function Transactions() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-          <div className="stat-card-success"><span className="text-xs text-muted-foreground">{t("income")}</span><p className="text-lg font-display font-bold text-success">{fmt(incomeTotal)}</p></div>
-          <div className="stat-card-destructive"><span className="text-xs text-muted-foreground">{t("expense")}</span><p className="text-lg font-display font-bold text-destructive">{fmt(expenseTotal)}</p></div>
-          <div className="stat-card"><span className="text-xs text-muted-foreground">{t("net")}</span><p className={`text-lg font-display font-bold ${incomeTotal - expenseTotal >= 0 ? "text-success" : "text-destructive"}`}>{fmt(incomeTotal - expenseTotal)}</p></div>
+          <button
+            type="button"
+            onClick={() => setFilter(filter === "income" ? "all" : "income")}
+            className={`stat-card-success text-left transition-all ${filter === "income" ? "ring-2 ring-success shadow-lg shadow-success/20" : "hover:ring-1 hover:ring-success/50"}`}
+          >
+            <span className="text-xs text-muted-foreground">{t("income")}{filter === "income" ? " ✓" : ""}</span>
+            <p className="text-lg font-display font-bold text-success">{fmt(incomeTotal)}</p>
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilter(filter === "expense" ? "all" : "expense")}
+            className={`stat-card-destructive text-left transition-all ${filter === "expense" ? "ring-2 ring-destructive shadow-lg shadow-destructive/20" : "hover:ring-1 hover:ring-destructive/50"}`}
+          >
+            <span className="text-xs text-muted-foreground">{t("expense")}{filter === "expense" ? " ✓" : ""}</span>
+            <p className="text-lg font-display font-bold text-destructive">{fmt(expenseTotal)}</p>
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilter("all")}
+            className={`stat-card text-left transition-all ${filter === "all" ? "ring-2 ring-primary shadow-lg shadow-primary/20" : "hover:ring-1 hover:ring-primary/50"}`}
+          >
+            <span className="text-xs text-muted-foreground">{t("net")}{filter === "all" ? " ✓" : ""}</span>
+            <p className={`text-lg font-display font-bold ${incomeTotal - expenseTotal >= 0 ? "text-success" : "text-destructive"}`}>{fmt(incomeTotal - expenseTotal)}</p>
+          </button>
         </div>
 
         {/* Scan Receipt Panel */}
@@ -230,7 +252,10 @@ export default function Transactions() {
             <p className="text-sm text-muted-foreground text-center py-12">{t("noTransactions")}</p>
           ) : (
             <div className="divide-y divide-border/50">
-              {[...transactions].sort((a: any, b: any) => new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime()).map((tx: any) => (
+              {[...transactions]
+                .filter((tx: any) => filter === "all" || tx.type === filter)
+                .sort((a: any, b: any) => new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime())
+                .map((tx: any) => (
                 <div key={tx.id} className="list-item cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => setSelectedTx(tx)}>
                   <div className="flex items-center gap-3 min-w-0">
                     <div className={`h-9 w-9 rounded-lg flex items-center justify-center shrink-0 ${tx.type === "income" ? "bg-success/10" : "bg-destructive/10"}`}>
