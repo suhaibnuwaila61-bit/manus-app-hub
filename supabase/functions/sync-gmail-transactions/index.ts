@@ -151,16 +151,44 @@ Deno.serve(async (req) => {
       ? new Date(cfg.last_sync_at)
       : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const afterEpoch = Math.floor(sinceDate.getTime() / 1000);
-    // Default banks: ADCB + Liv (Emirates NBD). Users can override via email_filters.
-    const defaultSenders = [
-      "adcb.com",
-      "liv.me",
-      "emiratesnbd.com",
-      "emiratesnbd.ae",
-    ];
-    const senders =
-      cfg.email_filters && cfg.email_filters.length > 0 ? cfg.email_filters : defaultSenders;
-    const filterClause = "(" + senders.map((f: string) => `from:${f}`).join(" OR ") + ")";
+    // Match transaction emails from ANY bank. Users can override with custom email_filters (from: senders).
+    let filterClause: string;
+    if (cfg.email_filters && cfg.email_filters.length > 0) {
+      filterClause = "(" + cfg.email_filters.map((f: string) => `from:${f}`).join(" OR ") + ")";
+    } else {
+      const keywords = [
+        '"transaction alert"',
+        '"transaction notification"',
+        '"purchase alert"',
+        '"card transaction"',
+        '"debit alert"',
+        '"credit alert"',
+        '"payment received"',
+        '"you have spent"',
+        '"has been debited"',
+        '"has been credited"',
+        '"apple pay"',
+        '"google pay"',
+        '"pos purchase"',
+      ];
+      const senderHints = [
+        "bank",
+        "adcb.com",
+        "liv.me",
+        "emiratesnbd.com",
+        "emiratesnbd.ae",
+        "fab.ae",
+        "mashreq.com",
+        "hsbc",
+        "citi",
+        "rakbank",
+        "dib.ae",
+        "adib.ae",
+      ];
+      const kwClause = "(" + keywords.join(" OR ") + ")";
+      const fromClause = "(" + senderHints.map((s) => `from:${s}`).join(" OR ") + ")";
+      filterClause = `(${kwClause} OR ${fromClause})`;
+    }
     const query = `${filterClause} after:${afterEpoch}`;
 
     const listResp = await fetch(
