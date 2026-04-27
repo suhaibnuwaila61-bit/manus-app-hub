@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, X, Trash2, Loader2, TrendingUp, TrendingDown, Calculator, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, X, Trash2, Loader2, TrendingUp, TrendingDown, Calculator, ChevronDown, ChevronUp, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -25,8 +26,27 @@ export default function Investments() {
   const [sellForm, setSellForm] = useState<{ id: string; quantity: string; price: string; fees: string } | null>(null);
   const [buyMoreForm, setBuyMoreForm] = useState<{ id: string; quantity: string; price: string; fees: string } | null>(null);
 
+  const [refreshing, setRefreshing] = useState(false);
+
   // Calculator state
   const [roiCalc, setRoiCalc] = useState({ buyPrice: "", sellPrice: "", quantity: "", fees: "" });
+
+  const handleRefreshPrices = async () => {
+    if (investments.length === 0) { toast.error("No investments to refresh"); return; }
+    setRefreshing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("refresh-investment-prices");
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success(`Updated ${data.updated}/${data.total} prices${data.failed ? ` (${data.failed} failed)` : ""}`);
+      console.table(data.results);
+      window.location.reload();
+    } catch (e: any) {
+      toast.error(e.message || "Failed to refresh prices");
+    } finally {
+      setRefreshing(false);
+    }
+  };
   const [compoundCalc, setCompoundCalc] = useState({ principal: "", rate: "", years: "" });
 
   const portfolioValue = investments.reduce((s: number, i: any) => s + Number(i.quantity) * Number(i.current_price), 0);
@@ -159,9 +179,15 @@ export default function Investments() {
             <h1 className="text-2xl font-display font-bold">{t("investmentPortfolioTitle")}</h1>
             <p className="text-sm text-muted-foreground mt-1">{t("investmentPortfolioSubtitle")}</p>
           </div>
-          <Button onClick={() => setShowForm(true)} size="sm" className="glow-button shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/40 transition-all duration-500">
-            <Plus className="h-4 w-4 me-1" /> {t("addInvestment")}
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={handleRefreshPrices} disabled={refreshing} size="sm" variant="outline">
+              {refreshing ? <Loader2 className="h-4 w-4 me-1 animate-spin" /> : <RefreshCw className="h-4 w-4 me-1" />}
+              Refresh Prices
+            </Button>
+            <Button onClick={() => setShowForm(true)} size="sm" className="glow-button shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/40 transition-all duration-500">
+              <Plus className="h-4 w-4 me-1" /> {t("addInvestment")}
+            </Button>
+          </div>
         </div>
 
         {/* Stats */}
